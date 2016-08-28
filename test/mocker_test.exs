@@ -139,6 +139,16 @@ defmodule MockerTest do
     assert was_called(MockBar, :with_args, ["a", 100, %{c: 1}]) == once
     assert was_called(MockBar, :with_args, ["b", 100, %{c: 1}]) == never
   end
+
+  test "should intercept with specific function arguments" do
+    mock(MockBar)
+    intercept(MockBar, :with_args, ["a", {:b}, %{c: 1}], with: :original_function)
+    intercept(MockBar, :with_args, ["b", {:c}, %{d: 1}], with: fn(_,_,_) -> {"foo"} end)
+    assert Foo.gone("a", {:b}, %{c: 1}) == {"a", {:b}, %{c: 1}}
+    assert Foo.gone("b", {:c}, %{d: 1}) == {"foo"}
+    assert Foo.gone("", "", "") == nil
+    assert was_called(MockBar, :with_args, ["", "", ""]) == once
+  end
 end
 
 
