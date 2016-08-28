@@ -11,6 +11,11 @@ defmodule Foo do
   def gone(a, b, c) do
     MockBar.with_args(a, b, c)
   end
+
+  def pipe do
+    MockBaz.cat
+      |> MockBar.with_args(nil, nil)
+  end
 end
 
 defmodule MockBar do
@@ -47,6 +52,10 @@ defmodule MockerTest do
   setup do
     Mocker.start_link
     :ok
+  end
+
+  test "should call origin function if not mocked" do
+    assert Foo.go == "Actual impl"
   end
 
   test "should validate that Bar was called" do
@@ -148,6 +157,14 @@ defmodule MockerTest do
     assert Foo.gone("b", {:c}, %{d: 1}) == {"foo"}
     assert Foo.gone("", "", "") == nil
     assert was_called(MockBar, :with_args, ["", "", ""]) == once
+  end
+
+  test "should mock multiple functions and have then work together" do
+    mock(MockBar)
+    mock(MockBaz)
+    intercept(MockBaz, :cat, nil, with: fn() -> "I'm a flying cat!" end)
+    intercept(MockBar, :with_args, ["I'm a flying cat!", nil, nil], with: fn(a, _, _) -> "#{a} So am I" end)
+    assert Foo.pipe == "I'm a flying cat! So am I"
   end
 end
 

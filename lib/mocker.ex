@@ -33,18 +33,23 @@ defmodule Mocker do
   
   def handle_call({:get_interceptor, module, func, args, test_pid}, _from, state) do
     module_pid = get_module_pid(state, module, test_pid)
-    interceptor = GenServer.call(module_pid, {:get_interceptor, func, args})
+    interceptor = cond do
+      module_pid == nil -> :original_function
+      true -> GenServer.call(module_pid, {:get_interceptor, func, args})
+    end
     {:reply, interceptor, state}
   end
 
   def handle_call({module, func, args, test_pid}, _from, state) do
     module_pid = get_module_pid(state, module, test_pid)
-    GenServer.call(module_pid, {:increment_call_count, func, args}) 
+    if(module_pid != nil) do
+      GenServer.call(module_pid, {:increment_call_count, func, args}) 
+    end
     {:reply, state, state}
   end
 
   defp get_module_pid(state, module, test_pid) do
-    Map.get(state, test_pid)
+    Map.get(state, test_pid, %{})
       |> Map.get(module)
   end
 
