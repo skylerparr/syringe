@@ -4,6 +4,10 @@ defmodule RealWorker do
     {:ok, %{id: 1}}
   end
 
+  def collect_data(arg) do
+    arg
+  end
+
   def foo do
     :ok
   end

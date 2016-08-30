@@ -9,4 +9,13 @@ defmodule AutoMockerTest do
     assert MockWorker.collect_data == "fully mocked"
     assert MockWorker.collect_more_data(1,2,3) == {1,2,3}
   end
+
+  test "should allow overloaded functions" do
+    mock(MockWorker)
+    intercept(MockWorker, :collect_data, nil, with: fn -> "mocked" end)
+    intercept(MockWorker, :collect_data, [1], with: fn(arg) -> arg end)
+    
+    assert MockWorker.collect_data == "mocked"
+    assert MockWorker.collect_data(1) == 1
+  end
 end
