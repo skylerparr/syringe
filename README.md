@@ -1,4 +1,4 @@
-# Injector
+# Syringe
 
 **TODO: Add description**
 
@@ -6,19 +6,11 @@
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
 
-  1. Add `injector` to your list of dependencies in `mix.exs`:
+  1. Add `syringe` to your list of dependencies in `mix.exs`:
 
     ```elixir
     def deps do
-      [{:injector, "~> 0.1.0"}]
-    end
-    ```
-
-  2. Ensure `injector` is started before your application:
-
-    ```elixir
-    def application do
-      [applications: [:injector]]
+      [{:syringe, "~> 0.1.0"}]
     end
     ```
 

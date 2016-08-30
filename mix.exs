@@ -2,7 +2,7 @@ defmodule Injector.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :injector,
+    [app: :syringe,
      version: "0.1.0",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,

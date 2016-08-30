@@ -12,16 +12,15 @@ defmodule AutoMocker do
   end
 
   defp gen_interface(real_module, functions) do
-    Enum.reduce(functions, [], fn({fun, arity}, acc) ->
+    Enum.map(functions, fn({fun, arity}) ->
       args = generate_args(arity)
-      content = quote do
+      quote do
         def unquote({fun, [], args}) do
           mock_func(__MODULE__, unquote(fun), unquote(args), fn ->
             unquote(real_module).unquote(fun)
           end)
         end
       end 
-      [content | acc]
     end)
   end
 
