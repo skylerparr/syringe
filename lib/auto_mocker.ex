@@ -21,7 +21,7 @@ defmodule AutoMocker do
           end)
         end
       end 
-      acc = [content | acc]
+      [content | acc]
     end)
   end
 
