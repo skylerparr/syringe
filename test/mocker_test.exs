@@ -49,11 +49,6 @@ defmodule MockerTest do
   doctest Injector
   import Mocker
 
-  setup do
-    Mocker.start_link
-    :ok
-  end
-
   test "should call origin function if not mocked" do
     assert Foo.go == "Actual impl"
   end

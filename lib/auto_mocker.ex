@@ -13,19 +13,28 @@ defmodule AutoMocker do
 
   defp gen_interface(real_module, functions) do
     Enum.reduce(functions, [], fn({fun, arity}, acc) ->
-      def_fun = fun |> Atom.to_string |> String.to_char_list
-      quote do
-        def unquote(def_fun) do
-          mock_func(__MODULE__, unquote(fun), nil, fn ->
+      args = generate_args(arity)
+      content = quote do
+        def unquote({fun, [], args}) do
+          mock_func(__MODULE__, unquote(fun), unquote(args), fn ->
             unquote(real_module).unquote(fun)
           end)
         end
       end 
+      acc = [content | acc]
     end)
+  end
+
+  defp generate_args(0), do: nil
+  defp generate_args(num_args) do
+    for i <- 1..num_args, do: {"arg#{i}" |> String.to_atom, [], Elixir}
   end
 
   defp exported_functions(module) do
     module.module_info
       |> Keyword.get(:exports)
+      |> Keyword.delete(:__info__)
+      |> Keyword.delete(:module_info)
   end
+
 end
