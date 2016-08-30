@@ -17,5 +17,7 @@ defmodule AutoMockerTest do
     
     assert MockWorker.collect_data == "mocked"
     assert MockWorker.collect_data(1) == 1
+
+    assert was_called(MockWorker, :collect_data, [1]) == once
   end
 end
