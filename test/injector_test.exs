@@ -13,6 +13,10 @@ defmodule InjectorTest do
   test "injects with alias" do
     assert Sample.third_bar == ThirdBar.bar
   end
+
+  test "injects existing module definition even if not found in mapping" do
+    assert Sample.not_mapped == "great"
+  end
 end
 
 defmodule MyMapping do
@@ -26,6 +30,7 @@ defmodule Sample do
   inject Bar
   inject OtherBar
   inject ABar, as: BBar
+  inject NotMapped
 
   def call_bar do
     Bar.bar
@@ -37,6 +42,16 @@ defmodule Sample do
 
   def third_bar do
     BBar.bar
+  end
+
+  def not_mapped do
+    NotMapped.great
+  end
+end
+
+defmodule NotMapped do
+  def great do
+    "great"
   end
 end
 

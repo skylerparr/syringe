@@ -29,10 +29,17 @@ defmodule Injector do
   end
 
   defp write_alias(module, as_atom) do
-    module = Map.get(mapping, module)
+    module = Map.get(mapping, module, module |> convert_to_elixir_module)
     quote do
       alias unquote(module), as: unquote(as_atom)
     end
+  end
+
+  defp convert_to_elixir_module(module) do
+    str_module = module 
+      |> Atom.to_string
+    "Elixir.#{str_module}"
+      |> String.to_atom
   end
 
   defp get_module(definition) do
