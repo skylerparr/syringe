@@ -4,7 +4,7 @@ defmodule Injector do
   defmacro __using__(options) do
     mapper = get_module(options)
     m = mapper |> Atom.to_string
-    mapper = "#{@elixir_namespace}#{m}" |> String.to_atom
+    mapper = @elixir_namespace <> m |> String.to_atom
     map = apply(mapper, :get_mapping, [])
     Agent.start_link(fn -> map end, name: __MODULE__)
 
@@ -18,28 +18,21 @@ defmodule Injector do
     module = get_module(definition)
     [as: as_option] = options
     as = get_module(as_option)
-    as_atom = module_as(as)
+    as_atom = as_elixir_module(as)
     write_alias(module, as_atom)
   end
 
   defmacro inject(definition) do
     module = get_module(definition)
-    as_atom = module_as(module)
+    as_atom = as_elixir_module(module)
     write_alias(module, as_atom)
   end
 
   defp write_alias(module, as_atom) do
-    module = Map.get(mapping, module, module |> convert_to_elixir_module)
+    module = Map.get(mapping, module, module |> as_elixir_module)
     quote do
       alias unquote(module), as: unquote(as_atom)
     end
-  end
-
-  defp convert_to_elixir_module(module) do
-    str_module = module 
-      |> Atom.to_string
-    "Elixir.#{str_module}"
-      |> String.to_atom
   end
 
   defp get_module(definition) do
@@ -47,10 +40,10 @@ defmodule Injector do
     module
   end
 
-  defp module_as(module) do
+  defp as_elixir_module(module) do
     as_string = module 
       |> Atom.to_string
-    "#{@elixir_namespace}#{as_string}"
+    @elixir_namespace <> as_string
       |> String.to_atom
   end
 
