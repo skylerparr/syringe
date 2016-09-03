@@ -12,7 +12,7 @@ defmodule RealWorker do
     :ok
   end
 
-  def collect_more_data(_, _, _) do
-    {:ok}
+  def collect_more_data(a, b, c) do
+    {a,b,c}
   end
 end

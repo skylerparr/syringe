@@ -4,19 +4,34 @@ defmodule Mocker do
   def start_link, do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
   def mock(module) do
+    module = get_injector_module(module)
     {:ok, module_pid} = apply(module, :start_link, [])
     GenServer.call(__MODULE__, {:map_to_pid, self, module_pid, module})
   end
 
-  def was_called(module, func, args \\ nil) do
+  def was_called(module, func, args \\ []) do
+    module = get_injector_module(module)
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, self, module})
     call_count = GenServer.call(module_pid, {:call_count, func, args})
     times(call_count)
   end
 
   def intercept(module, func, args, [with: intercept_func]) do
+    module = get_injector_module(module)
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, self, module})
     GenServer.call(module_pid, {:set_interceptor, func, args, intercept_func})
+  end
+
+  defp get_injector_module(module) do
+    module = module 
+    |> Atom.to_string 
+    |> String.split(".")
+    |> tl 
+    |> Enum.join(".")
+
+    "Injector." <> module 
+    |> String.to_atom
+    |> Injector.as_elixir_module
   end
 
   def handle_call({:get_module_pid, test_pid, module}, _from, state) do

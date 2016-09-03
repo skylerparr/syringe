@@ -22,6 +22,7 @@ defmodule Mocked do
       end
 
       def handle_call({:set_interceptor, func, args, intercept_func}, _from, %{interceptors: interceptors} = state) do
+        args = args || []
         interceptors_list = Map.get(interceptors, {func, args}, [])
         interceptors_list = interceptors_list ++ [intercept_func] 
         interceptors = Map.put(interceptors, {func, args}, interceptors_list)
@@ -52,11 +53,11 @@ defmodule Mocked do
         GenServer.call(Mocker, {module, func_atom, args, self})
         interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self})
         if(interceptor == :original_function) do
-          if(args == nil) do
+          #if(args == nil) do
             original_func.() 
-          else
-            apply(original_func, args)
-          end
+            #else
+              #  apply(original_func, nil)
+              #end
         else 
           call_interceptor(interceptor, args)
         end

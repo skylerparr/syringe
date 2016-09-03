@@ -1,13 +1,7 @@
 defmodule Injector do
   @elixir_namespace "Elixir."
 
-  defmacro __using__(options) do
-    mapper = get_module(options)
-    m = mapper |> Atom.to_string
-    mapper = @elixir_namespace <> m |> String.to_atom
-    map = apply(mapper, :get_mapping, [])
-    Agent.start_link(fn -> map end, name: __MODULE__)
-
+  defmacro __using__(_) do
     quote do
       import Injector, only: [inject: 2, inject: 1]
       unquote(add_inject)
@@ -29,9 +23,14 @@ defmodule Injector do
   end
 
   defp write_alias(module, as_atom) do
-    module = Map.get(mapping, module, module |> as_elixir_module)
+    injector_module = ("Injector." <> (module |> Atom.to_string))
+      |> String.to_atom
+      |> as_elixir_module
     quote do
-      alias unquote(module), as: unquote(as_atom)
+      defmodule unquote(injector_module) do
+        use AutoMocker, for: unquote(module)
+      end
+      alias unquote(injector_module), as: unquote(as_atom)
     end
   end
 
@@ -40,15 +39,11 @@ defmodule Injector do
     module
   end
 
-  defp as_elixir_module(module) do
+  def as_elixir_module(module) do
     as_string = module 
       |> Atom.to_string
     @elixir_namespace <> as_string
       |> String.to_atom
-  end
-
-  def mapping do
-    Agent.get(__MODULE__, fn(map) -> map end)
   end
 
   defp add_inject do

@@ -1,4 +1,23 @@
+defmodule MockBar do
+  def bar do
+    "Actual impl"
+  end
+
+  def with_args(a, b, c) do
+    {a,b,c}
+  end
+end
+
+defmodule MockBaz do
+  def cat do
+    "do cat things"
+  end
+end
+
 defmodule Foo do
+  use Injector
+  inject MockBar
+  inject MockBaz
 
   def go do
     MockBar.bar
@@ -18,35 +37,9 @@ defmodule Foo do
   end
 end
 
-defmodule MockBar do
-  use Mocked
-
-  def bar do
-    mock_func(__MODULE__, :bar, nil, fn() -> 
-      "Actual impl"
-    end)
-  end
-
-  def with_args(a, b, c) do
-    mock_func(__MODULE__, :with_args, [a,b,c], fn(a,b,c) ->
-      {a,b,c}
-    end)
-  end
-end
-
-defmodule MockBaz do
-  use Mocked
-
-  def cat do
-    mock_func(__MODULE__, :cat, nil, fn() -> 
-      "do cat things"
-    end)
-  end
-end
-
 defmodule MockerTest do
   use ExUnit.Case, async: true
-  doctest Injector
+  doctest Mocker
   import Mocker
 
   test "should call origin function if not mocked" do
