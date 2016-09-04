@@ -26,7 +26,7 @@ defmodule Sample do
 end
 
 defmodule InjectorTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest Injector
 
   test "injects implementation" do
