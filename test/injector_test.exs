@@ -4,10 +4,16 @@ defmodule Bar do
   end
 end
 
+defmodule MyService.Cool.Face.McBabar do
+  def bar do
+    "bar"
+  end
+end
+
 defmodule Sample do
   use Injector
   inject Bar
-  inject Bar, as: BBar
+  inject MyService.Cool.Face.McBabar, as: BBar
 
   def call_bar do
     Bar.bar

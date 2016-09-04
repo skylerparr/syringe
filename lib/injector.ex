@@ -35,8 +35,8 @@ defmodule Injector do
   end
 
   defp get_module(definition) do
-    {:__aliases__, _, [module]} = definition
-    module
+    {:__aliases__, _, module} = definition
+    Enum.join(module, ".") |> String.to_atom
   end
 
   def as_elixir_module(module) do
