@@ -26,7 +26,7 @@ defmodule Sample do
 end
 
 defmodule MockInjectingStrategyTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   doctest Injector
 
   test "injects implementation" do
