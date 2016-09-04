@@ -9,32 +9,16 @@ defmodule Injector do
   end
 
   defmacro inject(definition, options) do
-    module = get_module(definition)
-    [as: as_option] = options
-    as = get_module(as_option)
-    as_atom = as_elixir_module(as)
-    write_alias(module, as_atom)
+    strategy = Application.fetch_env!(:syringe, :injector_strategy)
+    strategy.inject(definition, options)
   end
 
   defmacro inject(definition) do
-    module = get_module(definition)
-    as_atom = as_elixir_module(module)
-    write_alias(module, as_atom)
+    strategy = Application.fetch_env!(:syringe, :injector_strategy)
+    strategy.inject(definition)
   end
 
-  defp write_alias(module, as_atom) do
-    injector_module = ("Injector." <> (module |> Atom.to_string))
-      |> String.to_atom
-      |> as_elixir_module
-    quote do
-      defmodule unquote(injector_module) do
-        use AutoMocker, for: unquote(module)
-      end
-      alias unquote(injector_module), as: unquote(as_atom)
-    end
-  end
-
-  defp get_module(definition) do
+  def get_module(definition) do
     {:__aliases__, _, module} = definition
     Enum.join(module, ".") |> String.to_atom
   end
