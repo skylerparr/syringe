@@ -4,19 +4,34 @@ defmodule Mocker do
   def start_link, do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
   def mock(module) do
+    module = get_injector_module(module)
     {:ok, module_pid} = apply(module, :start_link, [])
     GenServer.call(__MODULE__, {:map_to_pid, self, module_pid, module})
   end
 
-  def was_called(module, func, args \\ nil) do
+  def was_called(module, func, args \\ []) do
+    module = get_injector_module(module)
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, self, module})
     call_count = GenServer.call(module_pid, {:call_count, func, args})
     times(call_count)
   end
 
   def intercept(module, func, args, [with: intercept_func]) do
+    module = get_injector_module(module)
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, self, module})
     GenServer.call(module_pid, {:set_interceptor, func, args, intercept_func})
+  end
+
+  defp get_injector_module(module) do
+    module = module 
+    |> Atom.to_string 
+    |> String.split(".")
+    |> tl 
+    |> Enum.join(".")
+
+    "Injector." <> module 
+    |> String.to_atom
+    |> Injector.as_elixir_module
   end
 
   def handle_call({:get_module_pid, test_pid, module}, _from, state) do
@@ -33,18 +48,23 @@ defmodule Mocker do
   
   def handle_call({:get_interceptor, module, func, args, test_pid}, _from, state) do
     module_pid = get_module_pid(state, module, test_pid)
-    interceptor = GenServer.call(module_pid, {:get_interceptor, func, args})
+    interceptor = cond do
+      module_pid == nil -> :original_function
+      true -> GenServer.call(module_pid, {:get_interceptor, func, args})
+    end
     {:reply, interceptor, state}
   end
 
   def handle_call({module, func, args, test_pid}, _from, state) do
     module_pid = get_module_pid(state, module, test_pid)
-    GenServer.call(module_pid, {:increment_call_count, func, args}) 
+    if(module_pid != nil) do
+      GenServer.call(module_pid, {:increment_call_count, func, args}) 
+    end
     {:reply, state, state}
   end
 
   defp get_module_pid(state, module, test_pid) do
-    Map.get(state, test_pid)
+    Map.get(state, test_pid, %{})
       |> Map.get(module)
   end
 

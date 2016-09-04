@@ -1,4 +1,23 @@
+defmodule MockBar do
+  def bar do
+    "Actual impl"
+  end
+
+  def with_args(a, b, c) do
+    {a,b,c}
+  end
+end
+
+defmodule MockBaz do
+  def cat do
+    "do cat things"
+  end
+end
+
 defmodule Foo do
+  use Injector
+  inject MockBar
+  inject MockBaz
 
   def go do
     MockBar.bar
@@ -11,42 +30,20 @@ defmodule Foo do
   def gone(a, b, c) do
     MockBar.with_args(a, b, c)
   end
-end
 
-defmodule MockBar do
-  use Mocked
-
-  def bar do
-    mock_func(__MODULE__, :bar, nil, fn() -> 
-      "Actual impl"
-    end)
-  end
-
-  def with_args(a, b, c) do
-    mock_func(__MODULE__, :with_args, [a,b,c], fn(a,b,c) ->
-      {a,b,c}
-    end)
-  end
-end
-
-defmodule MockBaz do
-  use Mocked
-
-  def cat do
-    mock_func(__MODULE__, :cat, nil, fn() -> 
-      "do cat things"
-    end)
+  def pipe do
+    MockBaz.cat
+      |> MockBar.with_args(nil, nil)
   end
 end
 
 defmodule MockerTest do
   use ExUnit.Case, async: true
-  doctest Injector
+  doctest Mocker
   import Mocker
 
-  setup do
-    Mocker.start_link
-    :ok
+  test "should call origin function if not mocked" do
+    assert Foo.go == "Actual impl"
   end
 
   test "should validate that Bar was called" do
@@ -138,6 +135,24 @@ defmodule MockerTest do
     assert was_called(MockBar, :with_args, ["a", {:b}, %{c: 1}]) == twice
     assert was_called(MockBar, :with_args, ["a", 100, %{c: 1}]) == once
     assert was_called(MockBar, :with_args, ["b", 100, %{c: 1}]) == never
+  end
+
+  test "should intercept with specific function arguments" do
+    mock(MockBar)
+    intercept(MockBar, :with_args, ["a", {:b}, %{c: 1}], with: :original_function)
+    intercept(MockBar, :with_args, ["b", {:c}, %{d: 1}], with: fn(_,_,_) -> {"foo"} end)
+    assert Foo.gone("a", {:b}, %{c: 1}) == {"a", {:b}, %{c: 1}}
+    assert Foo.gone("b", {:c}, %{d: 1}) == {"foo"}
+    assert Foo.gone("", "", "") == nil
+    assert was_called(MockBar, :with_args, ["", "", ""]) == once
+  end
+
+  test "should mock multiple functions and have then work together" do
+    mock(MockBar)
+    mock(MockBaz)
+    intercept(MockBaz, :cat, nil, with: fn() -> "I'm a flying cat!" end)
+    intercept(MockBar, :with_args, ["I'm a flying cat!", nil, nil], with: fn(a, _, _) -> "#{a} So am I" end)
+    assert Foo.pipe == "I'm a flying cat! So am I"
   end
 end
 

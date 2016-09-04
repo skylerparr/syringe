@@ -1,6 +1,7 @@
 defmodule Mocked do
 
   defmacro __using__(_) do
+
     quote do
       use GenServer
       
@@ -20,19 +21,20 @@ defmodule Mocked do
         {:reply, state, state}
       end
 
-      def handle_call({:set_interceptor, func, _args, intercept_func}, _from, %{interceptors: interceptors} = state) do
-        interceptors_list = Map.get(interceptors, func, [])
+      def handle_call({:set_interceptor, func, args, intercept_func}, _from, %{interceptors: interceptors} = state) do
+        args = args || []
+        interceptors_list = Map.get(interceptors, {func, args}, [])
         interceptors_list = interceptors_list ++ [intercept_func] 
-        interceptors = Map.put(interceptors, func, interceptors_list)
+        interceptors = Map.put(interceptors, {func, args}, interceptors_list)
         state = Map.put(state, :interceptors, interceptors) 
         {:reply, state, state}
       end
 
-      def handle_call({:get_interceptor, func, _args}, _from, %{interceptors: interceptors} = state) do
-        interceptors_list = Map.get(interceptors, func, [])
+      def handle_call({:get_interceptor, func, args}, _from, %{interceptors: interceptors} = state) do
+        interceptors_list = Map.get(interceptors, {func, args}, [])
         {interceptor, interceptors_list} = get_next_interceptor(interceptors_list)
 
-        interceptors = Map.put(interceptors, func, interceptors_list)
+        interceptors = Map.put(interceptors, {func, args}, interceptors_list)
         state = Map.put(state, :interceptors, interceptors) 
  
         {:reply, interceptor, state}
@@ -43,19 +45,21 @@ defmodule Mocked do
       defp get_next_interceptor([fun | tail]), do: {fun, tail}
 
       def call_interceptor(nil), do: nil
-      def call_interceptor(interceptor), do: interceptor.()
+      def call_interceptor(nil, _), do: nil
+      def call_interceptor(interceptor, nil), do: interceptor.()
+      def call_interceptor(interceptor, args), do: apply(interceptor, args)
 
       def mock_func(module, func_atom, args, original_func) do
         GenServer.call(Mocker, {module, func_atom, args, self})
         interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self})
         if(interceptor == :original_function) do
-          if(args == nil) do
+          #if(args == nil) do
             original_func.() 
-          else
-            original_func.(args)
-          end
+            #else
+              #  apply(original_func, nil)
+              #end
         else 
-          call_interceptor(interceptor)
+          call_interceptor(interceptor, args)
         end
       end
 
