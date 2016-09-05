@@ -3,10 +3,10 @@ defmodule Injector.Mixfile do
 
   def project do
     [app: :syringe,
-     version: "0.1.0",
+     version: "0.9.0",
      elixir: "~> 1.2",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
+     description: description(),
+     package: package(),
      deps: deps()]
   end
 
@@ -28,5 +28,21 @@ defmodule Injector.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     []
+  end
+
+  defp description do
+    """
+    A full library to help inject implementations at build time.
+    With this power we can have a strong mocking framework that 
+    can also be asynchronous in test.
+    """
+  end
+
+  defp package do
+    name: :syringe,
+    files: ["lib", "mix.exs", "README*", "readme*", "LICENSE*", "license*", "config"],
+    maintainers: ["Skyler Parr"],
+    licenses: ["MIT"],
+    links: %{"GitHub" => "https://github.com/skylerparr/syringe"}]
   end
 end
