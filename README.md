@@ -148,7 +148,7 @@ To use the injector, it behaves similar to ```alias```, except you use the word 
     config :syringe, injector_strategy: MockInjectingStrategy
     ```
     in your other configs
-    ```
+    ```elixir
     config :syringe, injector_strategy: AliasInjectingStrategy
     ```
 
