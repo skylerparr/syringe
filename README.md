@@ -125,7 +125,7 @@ To use the injector, it behaves similar to ```alias```, except you use the word 
 
       assert was_called(MyThing, :do_mine_things, [:b, :c, :d) == once # success
       assert was_called(MyThing, :do_mine_things, [:a, :b, :c) == once # success
-      assert was_called(MyThing, :do_mine_things, [:x, :y, zc) == never # success
+      assert was_called(MyThing, :do_mine_things, [:x, :y, :z) == never # success
     end
   end
 
