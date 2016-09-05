@@ -30,6 +30,9 @@ defmodule Sample do
     BBar.bar
   end
 
+  def four do
+    Four.bar
+  end
 end
 
 defmodule MockInjectingStrategyTest do
@@ -47,6 +50,10 @@ defmodule MockInjectingStrategyTest do
   test "should create new module" do
     assert Injector.MockingBar.bar == "bar"
     assert Injector.MyService.Mock.Cool.Face.McBabar.bar == "bar"
+  end
+
+  test "resolve alias correctly" do
+    assert InjectorSample.three == "4"
   end
 end
 

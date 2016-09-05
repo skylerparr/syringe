@@ -9,7 +9,13 @@ defmodule AliasInjectingStrategy do
 
   def inject(definition) do
     module = Injector.get_module(definition)
-    as_atom = Injector.as_elixir_module(module)
+    as_atom = module
+    |> Atom.to_string
+    |> String.split(".")
+    |> Enum.reverse
+    |> hd
+    |> String.to_atom
+    |> Injector.as_elixir_module
     write_alias(module, as_atom)
   end
 

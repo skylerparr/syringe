@@ -4,6 +4,12 @@ defmodule AliasBar do
   end
 end
 
+defmodule One.Two.Three.Four.Five do
+  def four do
+    "4"
+  end
+end
+
 defmodule MyService.Alias.Cool.Face.McBabar do
   def bar do
     "bar"
@@ -13,6 +19,7 @@ end
 defmodule AliasSample do
   use Injector
   inject AliasBar
+  inject One.Two.Three.Four.Five
   inject MyService.Alias.Cool.Face.McBabar, as: BBar
 
   def call_bar do
@@ -23,6 +30,9 @@ defmodule AliasSample do
     BBar.bar
   end
 
+  def four do
+    Five.four
+  end
 end
 
 defmodule AliasInjectingStrategyTest do
@@ -45,5 +55,8 @@ defmodule AliasInjectingStrategyTest do
     assert AliasSample.third_bar == "bar"
   end
 
+  test "inject correct alias" do
+    assert AliasSample.four == "4"
+  end
 end
 
