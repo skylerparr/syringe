@@ -39,10 +39,12 @@ defmodule Injector.Mixfile do
   end
 
   defp package do
-    name: :syringe,
-    files: ["lib", "mix.exs", "README*", "readme*", "LICENSE*", "license*", "config"],
-    maintainers: ["Skyler Parr"],
-    licenses: ["MIT"],
-    links: %{"GitHub" => "https://github.com/skylerparr/syringe"}]
+    [
+      name: :syringe,
+      files: ["lib", "mix.exs", "README*", "readme*", "LICENSE*", "license*", "config"],
+      maintainers: ["Skyler Parr"],
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/skylerparr/syringe"}
+    ]
   end
 end
