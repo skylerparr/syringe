@@ -151,5 +151,8 @@ To use the injector, it behaves similar to ```alias```, except you use the word 
     ```elixir
     config :syringe, injector_strategy: AliasInjectingStrategy
     ```
-
-  3. You're ready to start injecting implementations
+  3. Turn on mocking for your tests. In your test/test_helper.exs
+    ```elixir
+    Mocker.start_link
+    ```
+  4. You're ready to start injecting implementations
