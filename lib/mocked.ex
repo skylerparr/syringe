@@ -8,6 +8,10 @@ defmodule Mocked do
       def start_link do
         GenServer.start_link(__MODULE__, %{call_count: %{}, interceptors: %{}})
       end
+
+      def init(opt) do
+        {:ok, opt}
+      end
       
       def handle_call({:call_count, func, args}, _from, %{call_count: call_count} = state) do
         count = Map.get(call_count, {func, args}, 0)
@@ -53,11 +57,7 @@ defmodule Mocked do
         GenServer.call(Mocker, {module, func_atom, args, self})
         interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self})
         if(interceptor == :original_function) do
-          #if(args == nil) do
-            original_func.() 
-            #else
-              #  apply(original_func, nil)
-              #end
+          original_func.() 
         else 
           call_interceptor(interceptor, args)
         end

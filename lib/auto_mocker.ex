@@ -1,17 +1,14 @@
 defmodule AutoMocker do
 
   defmacro __using__([for: {:__aliases__, _, [module]}]) do
-    mod_string = module |> Atom.to_string
-    module = "Elixir.#{mod_string}" |> String.to_atom
-    functions = exported_functions(module)
-    quoted = gen_interface(module, functions)
-    quote do
-      use Mocked
-      unquote(quoted)
-    end
+    gen_mock(module)
   end
 
   defmacro __using__([for: module]) do
+    gen_mock(module)
+  end
+
+  defp gen_mock(module) do
     mod_string = module |> Atom.to_string
     module = "Elixir.#{mod_string}" |> String.to_atom
     functions = exported_functions(module)
