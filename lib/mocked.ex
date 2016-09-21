@@ -13,12 +13,14 @@ defmodule Mocked do
         {:ok, opt}
       end
       
-      def handle_call({:call_count, func, args}, _from, %{call_count: call_count} = state) do
+      def handle_call({:call_count, func, args}, _from, %{call_count: call_count, interceptors: interceptors} = state) do
+        {func, args} = get_matching_args([], interceptors, func, args) |> elem(0)
         count = Map.get(call_count, {func, args}, 0)
         {:reply, count, state}
       end
 
-      def handle_call({:increment_call_count, func, args}, _from, %{call_count: call_count} = state) do
+      def handle_call({:increment_call_count, func, args}, _from, %{call_count: call_count, interceptors: interceptors} = state) do
+        {func, args} = get_matching_args([], interceptors, func, args) |> elem(0)
         count = Map.get(call_count, {func, args}, 0)
         call_count = Map.put(call_count, {func, args}, count + 1)
         state = Map.put(state, :call_count, call_count)
@@ -35,14 +37,42 @@ defmodule Mocked do
       end
 
       def handle_call({:get_interceptor, func, args}, _from, %{interceptors: interceptors} = state) do
-        interceptors_list = Map.get(interceptors, {func, args}, [])
+        interceptors_list = get_interceptors(interceptors, func, args)
         {interceptor, interceptors_list} = get_next_interceptor(interceptors_list)
 
-        interceptors = Map.put(interceptors, {func, args}, interceptors_list)
+        interceptors = cond do
+          interceptors_list == [] -> interceptors
+          true -> Map.put(interceptors, {func, args}, interceptors_list)
+        end
         state = Map.put(state, :interceptors, interceptors) 
  
         {:reply, interceptor, state}
       end
+
+      defp get_interceptors(interceptors, func, args) do
+        found = Map.get(interceptors, {func, args}, [])
+          |> get_matching_args(interceptors, func, args)
+          |> elem(1)
+      end
+
+      defp get_matching_args([], map, func, args) do
+        Enum.find(map, fn({{function, arguments}, interceptor}) ->
+          if(function == func) do
+            found = Enum.with_index(arguments)
+              |> Enum.all?(fn({item, index}) ->
+                original_arg = Enum.at(args, index)
+                (item == original_arg || item == :any)
+              end)
+          else
+            false
+          end
+        end)
+        |> matched_args(func, args)
+      end
+      defp get_matching_args(found, _, func, args), do: {{func, args}, found}
+
+      defp matched_args(nil, func, args), do: {{func, args}, []}
+      defp matched_args(ret_val, _, _), do: ret_val
 
       defp get_next_interceptor([]), do: {nil, []}
       defp get_next_interceptor(list) when length(list) == 1, do: {list |> hd, list}

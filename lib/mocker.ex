@@ -77,6 +77,8 @@ defmodule Mocker do
   def times(num) do
     "#{num} times" |> String.to_atom
   end
+
+  def any, do: :any
 end
 
 

@@ -147,12 +147,21 @@ defmodule MockerTest do
     assert was_called(MockBar, :with_args, ["", "", ""]) == once
   end
 
-  test "should mock multiple functions and have then work together" do
+  test "should mock multiple functions and have them work together" do
     mock(MockBar)
     mock(MockBaz)
     intercept(MockBaz, :cat, nil, with: fn() -> "I'm a flying cat!" end)
     intercept(MockBar, :with_args, ["I'm a flying cat!", nil, nil], with: fn(a, _, _) -> "#{a} So am I" end)
     assert Foo.pipe == "I'm a flying cat! So am I"
+  end
+
+  test "should match with any" do
+    mock(MockBar)
+    intercept(MockBar, :with_args, ["a", 100, any], with: :original_function)
+    assert Foo.gone("a", 100, %{}) == {"a", 100, %{}}
+    assert Foo.gone("a", 100, []) == {"a", 100, []}
+    assert was_called(MockBar, :with_args, ["a", 100, any]) == twice
+    assert was_called(MockBar, :with_args, ["a", 200, any]) == never
   end
 end
 
