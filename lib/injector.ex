@@ -4,7 +4,6 @@ defmodule Injector do
   defmacro __using__(_) do
     quote do
       import Injector, only: [inject: 2, inject: 1]
-      unquote(add_inject)
     end
   end
 
@@ -20,7 +19,8 @@ defmodule Injector do
 
   def get_module(definition) do
     {:__aliases__, _, module} = definition
-    Enum.join(module, ".") |> String.to_atom
+    Enum.join(module, ".")
+    |> String.to_atom
   end
 
   def as_elixir_module(module) do
@@ -30,11 +30,5 @@ defmodule Injector do
       |> String.to_atom
   end
 
-  defp add_inject do
-    quote location: :keep do
-      defp inject do
-      end
-    end
-  end
 end
 
