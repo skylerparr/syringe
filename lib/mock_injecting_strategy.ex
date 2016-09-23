@@ -24,11 +24,20 @@ defmodule MockInjectingStrategy do
     injector_module = ("Injector." <> (module |> Atom.to_string))
       |> String.to_atom
       |> Injector.as_elixir_module
-    quote do
-      defmodule unquote(injector_module) do
-        use AutoMocker, for: unquote(module)
+
+    try do
+      injector_module.module_info
+      quote do
+        alias unquote(injector_module), as: unquote(as_atom)
       end
-      alias unquote(injector_module), as: unquote(as_atom)
+    rescue
+      UndefinedFunctionError -> 
+      quote do
+        defmodule unquote(injector_module) do
+          use AutoMocker, for: unquote(module)
+        end
+        alias unquote(injector_module), as: unquote(as_atom)
+      end
     end
   end
 
