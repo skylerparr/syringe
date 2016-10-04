@@ -37,6 +37,26 @@ defmodule Foo do
   end
 end
 
+defmodule Server do
+  use GenServer
+  use Injector
+
+  inject Foo
+
+  def start_link do
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  end
+
+  def call_foo do
+    GenServer.call(__MODULE__, :call_foo)
+  end
+
+  def handle_call(:call_foo, _from, state) do
+    Foo.go
+    {:reply, state, state}
+  end
+end
+
 defmodule MockerTest do
   use ExUnit.Case, async: true
   doctest Mocker
@@ -162,6 +182,14 @@ defmodule MockerTest do
     assert Foo.gone("a", 100, []) == {"a", 100, []}
     assert was_called(MockBar, :with_args, ["a", 100, any]) == twice
     assert was_called(MockBar, :with_args, ["a", 200, any]) == never
+  end
+
+  test "should call mocked function inside another process" do
+    {:ok, pid} = Server.start_link
+    mock(Foo, pid)
+    intercept(Foo, :go, nil, with: fn() -> :ok end)
+    Server.call_foo
+    assert was_called(Foo, :go, nil) == once
   end
 end
 

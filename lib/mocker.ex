@@ -1,24 +1,32 @@
 defmodule Mocker do
   use GenServer
 
-  def start_link, do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  def start_link do
+    MockPidMapServer.start_link
+    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  end
 
-  def mock(module) do
+  def mock(module), do: mock(module, self)
+  def mock(module, pid) do
+    MockPidMapServer.map(self, pid)
+    map_pid = MockPidMapServer.get(self)
     module = get_injector_module(module)
     {:ok, module_pid} = apply(module, :start_link, [])
-    GenServer.call(__MODULE__, {:map_to_pid, self, module_pid, module})
+    GenServer.call(__MODULE__, {:map_to_pid, map_pid, module_pid, module})
   end
 
   def was_called(module, func, args \\ []) do
+    map_pid = MockPidMapServer.get(self)
     module = get_injector_module(module)
-    module_pid = GenServer.call(__MODULE__, {:get_module_pid, self, module})
+    module_pid = GenServer.call(__MODULE__, {:get_module_pid, map_pid, module})
     call_count = GenServer.call(module_pid, {:call_count, func, args})
     times(call_count)
   end
 
   def intercept(module, func, args, [with: intercept_func]) do
+    map_pid = MockPidMapServer.get(self)
     module = get_injector_module(module)
-    module_pid = GenServer.call(__MODULE__, {:get_module_pid, self, module})
+    module_pid = GenServer.call(__MODULE__, {:get_module_pid, map_pid, module})
     GenServer.call(module_pid, {:set_interceptor, func, args, intercept_func})
   end
 
