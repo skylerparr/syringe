@@ -137,7 +137,7 @@ To use the injector, it behaves similar to ```alias```, except you use the word 
 
     ```elixir
     def deps do
-      [{:syringe, "~> 0.9.0"}]
+      [{:syringe, "~> 0.10.0"}]
     end
     ```
 
