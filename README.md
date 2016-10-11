@@ -92,7 +92,7 @@ To use the injector, it behaves similar to ```alias```, except you use the word 
       assert MyModule.do_things == 3
       assert MyModule.do_things == "one more thing"
       
-      # The last specified intercept with persist
+      # The last specified intercept will persist
       assert MyModule.do_things == "one more thing"
       assert MyModule.do_things == "one more thing"
       assert was_called(MyThing, :do_mine_things, nil) == times(6) # success
