@@ -177,7 +177,7 @@ To use the injector, it behaves similar to ```alias```, except you use the word 
   when interacting with GenServers referred by name, but can be used 
   whenever things are being run in a different process than your test.
 
-  ```elxir
+  ```elixir
   defmodule MyWork do
     def handle_work(state) do
       # I'm out of fake implementations. Does it matter
