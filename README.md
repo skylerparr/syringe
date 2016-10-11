@@ -131,6 +131,99 @@ To use the injector, it behaves similar to ```alias```, except you use the word 
 
   ```
 
+  Sometimes you want match on any arguments
+  ```elixir
+  defmodule SampleModule do
+    def do_some_work(how_much, call_me_when_i_am_done) do
+      call_me_when_i_am_done.()
+    end
+  end
+
+  defmodule ModuleImTesting do
+    use Injector
+    inject SampleModule
+
+    def do_work(how_much) do
+      SampleModule.do_some_work(how_much, &on_complete/0)
+    end
+
+    def on_complete do
+      IO.inspect "I'm done!"
+    end
+
+  end
+
+  defmodule ModuleImTestingTest do
+    use ExUnit.Case, async: true
+    import Mocker
+
+    setup do
+      mock(SampleModule)
+      :ok
+    end
+
+    test "should notify SampleModule to do some work" do
+      intercept(SampleModule, :do_some_work, [10, any], fn(_, on_complete) -> on_complete.() end) # the arguments are passed in and you can do what you want here
+      ModuleImTesting.do_work(10)
+      assert was_called(SampleModule, :do_some_work, [10, any]) == once # truthy
+    end
+  end
+
+  ```
+
+  Based on the nature of how tests execute, sometimes you need to be able
+  to mock modules that are running in different processes. Generally used
+  when interacting with GenServers referred by name, but can be used 
+  whenever things are being run in a different process than your test.
+
+  ```elxir
+  defmodule MyWork do
+    def handle_work(state) do
+      # I'm out of fake implementations. Does it matter
+      # what this is at this point?
+    end
+  end
+
+  defmodule MyServer do
+    use GenServer
+    use Injector
+
+    inject MyWork
+
+    def start_link do
+      GenServer.start_link(__MODULE__, 0, name: __MODULE__)
+    end
+
+    def increment do
+      GenServer.call(__MODULE__, :increment)
+    end
+
+    def handle_call(:increment, _from, state) do
+      output = MyWork.handle_work(state)
+      {:reply, output, state}
+    end
+  end
+
+  defmodule MyServerTest do
+    use ExUnit.Case, async: true
+    use Mocker
+
+    test "should outsource work to MyWork module in the GenServer process" do
+      {:ok, pid} = MyServer.start_link
+
+      # now that we're operating on a different pid we need to notify the
+      # mocker to work within that pid
+      mock(MyWork, pid)
+      
+      # now you can intercept the functions as before
+      intercept(MyWork, :handle_work, [0], fn(_) -> 100 end)
+
+      assert MyServer.increment() == 100
+      assert was_called(MyWork, :handle_work, [0]) == once #truthy
+    end
+  end
+  ```
+
 ## Installation
 
   1. Add `syringe` to your list of dependencies in `mix.exs`:
