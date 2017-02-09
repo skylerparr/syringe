@@ -69,7 +69,7 @@ defmodule MockerTest do
   test "should validate that Bar was called" do
     mock(MockBar)
     Foo.go
-    assert was_called(MockBar, :bar) == once
+    assert was_called(MockBar, :bar) == once()
   end
 
   test "should validate that Bar was called multiple times" do
@@ -82,7 +82,7 @@ defmodule MockerTest do
 
   test "should validate that bar was never called" do
     mock(MockBar)
-    assert was_called(MockBar, :bar) == never
+    assert was_called(MockBar, :bar) == never()
   end
 
   test "should validate multiple mocked modules" do
@@ -92,8 +92,8 @@ defmodule MockerTest do
     Foo.going
     Foo.go
 
-    assert was_called(MockBar, :bar) == twice
-    assert was_called(MockBaz, :cat) == once
+    assert was_called(MockBar, :bar) == twice()
+    assert was_called(MockBaz, :cat) == once()
   end
 
   test "should intercept function" do
@@ -152,9 +152,9 @@ defmodule MockerTest do
     assert Foo.gone("a", {:b}, %{c: 1}) == nil
     assert Foo.gone("a", {:b}, %{c: 1}) == nil
     assert Foo.gone("a", 100, %{c: 1}) == nil
-    assert was_called(MockBar, :with_args, ["a", {:b}, %{c: 1}]) == twice
-    assert was_called(MockBar, :with_args, ["a", 100, %{c: 1}]) == once
-    assert was_called(MockBar, :with_args, ["b", 100, %{c: 1}]) == never
+    assert was_called(MockBar, :with_args, ["a", {:b}, %{c: 1}]) == twice()
+    assert was_called(MockBar, :with_args, ["a", 100, %{c: 1}]) == once()
+    assert was_called(MockBar, :with_args, ["b", 100, %{c: 1}]) == never()
   end
 
   test "should intercept with specific function arguments" do
@@ -164,7 +164,7 @@ defmodule MockerTest do
     assert Foo.gone("a", {:b}, %{c: 1}) == {"a", {:b}, %{c: 1}}
     assert Foo.gone("b", {:c}, %{d: 1}) == {"foo"}
     assert Foo.gone("", "", "") == nil
-    assert was_called(MockBar, :with_args, ["", "", ""]) == once
+    assert was_called(MockBar, :with_args, ["", "", ""]) == once()
   end
 
   test "should mock multiple functions and have them work together" do
@@ -177,11 +177,11 @@ defmodule MockerTest do
 
   test "should match with any" do
     mock(MockBar)
-    intercept(MockBar, :with_args, ["a", 100, any], with: :original_function)
+    intercept(MockBar, :with_args, ["a", 100, any()], with: :original_function)
     assert Foo.gone("a", 100, %{}) == {"a", 100, %{}}
     assert Foo.gone("a", 100, []) == {"a", 100, []}
-    assert was_called(MockBar, :with_args, ["a", 100, any]) == twice
-    assert was_called(MockBar, :with_args, ["a", 200, any]) == never
+    assert was_called(MockBar, :with_args, ["a", 100, any()]) == twice()
+    assert was_called(MockBar, :with_args, ["a", 200, any()]) == never()
   end
 
   test "should call mocked function inside another process" do
@@ -189,8 +189,9 @@ defmodule MockerTest do
     mock(Foo, pid)
     intercept(Foo, :go, nil, with: fn() -> :ok end)
     Server.call_foo
-    assert was_called(Foo, :go, nil) == once
+    assert was_called(Foo, :go, nil) == once()
   end
+
 end
 
 
