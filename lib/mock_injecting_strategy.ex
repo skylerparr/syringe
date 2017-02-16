@@ -31,15 +31,20 @@ defmodule MockInjectingStrategy do
         alias unquote(injector_module), as: unquote(as_atom)
       end
     rescue
-      UndefinedFunctionError -> 
+      UndefinedFunctionError ->
       quote do
-        defmodule unquote(injector_module) do
-          use AutoMocker, for: unquote(module)
+        try do
+          unless Code.ensure_loaded?(unquote(injector_module)) do
+            defmodule unquote(injector_module) do
+              use AutoMocker, for: unquote(module)
+            end
+          end
+        rescue
+          CompileError -> :already_defined
         end
+
         alias unquote(injector_module), as: unquote(as_atom)
       end
     end
   end
-
 end
-
