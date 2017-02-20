@@ -5,7 +5,7 @@ defmodule Mocked do
     quote do
       use GenServer
       
-      def start_link do
+      def start_mock_link do
         GenServer.start_link(__MODULE__, %{call_count: %{}, interceptors: %{}})
       end
 
@@ -78,12 +78,12 @@ defmodule Mocked do
       defp get_next_interceptor(list) when length(list) == 1, do: {list |> hd, list}
       defp get_next_interceptor([fun | tail]), do: {fun, tail}
 
-      def call_interceptor(nil), do: nil
-      def call_interceptor(nil, _), do: nil
-      def call_interceptor(interceptor, nil), do: interceptor.()
-      def call_interceptor(interceptor, args), do: apply(interceptor, args)
+      defp call_interceptor(nil), do: nil
+      defp call_interceptor(nil, _), do: nil
+      defp call_interceptor(interceptor, nil), do: interceptor.()
+      defp call_interceptor(interceptor, args), do: apply(interceptor, args)
 
-      def mock_func(module, func_atom, args, original_func) do
+      defp mock_func(module, func_atom, args, original_func) do
         GenServer.call(Mocker, {module, func_atom, args, self()})
         interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self()})
         if(interceptor == :original_function) do

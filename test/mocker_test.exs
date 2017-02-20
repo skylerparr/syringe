@@ -18,6 +18,7 @@ defmodule Foo do
   use Injector
   inject MockBar
   inject MockBaz
+  inject MockWorker
 
   def go do
     MockBar.bar

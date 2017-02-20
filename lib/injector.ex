@@ -8,13 +8,15 @@ defmodule Injector do
   end
 
   defmacro inject(definition, options) do
-    strategy = Application.fetch_env!(:syringe, :injector_strategy)
-    strategy.inject(definition, options)
+    strategy().inject(definition, options)
   end
 
   defmacro inject(definition) do
-    strategy = Application.fetch_env!(:syringe, :injector_strategy)
-    strategy.inject(definition)
+    strategy().inject(definition)
+  end
+
+  defp strategy() do
+    Application.fetch_env!(:syringe, :injector_strategy)
   end
 
   def get_module(definition) do

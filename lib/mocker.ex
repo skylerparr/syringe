@@ -11,7 +11,7 @@ defmodule Mocker do
     MockPidMapServer.map(self(), pid)
     map_pid = MockPidMapServer.get(self())
     module = get_injector_module(module)
-    {:ok, module_pid} = apply(module, :start_link, [])
+    {:ok, module_pid} = apply(module, :start_mock_link, [])
     GenServer.call(__MODULE__, {:map_to_pid, map_pid, module_pid, module})
   end
 
