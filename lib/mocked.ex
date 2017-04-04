@@ -83,6 +83,9 @@ defmodule Mocked do
       defp call_interceptor(interceptor, nil), do: interceptor.()
       defp call_interceptor(interceptor, args), do: apply(interceptor, args)
 
+      defp mock_func(module, :__struct__, args, original_func) do
+        original_func.()
+      end
       defp mock_func(module, func_atom, args, original_func) do
         GenServer.call(Mocker, {module, func_atom, args, self()})
         interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self()})

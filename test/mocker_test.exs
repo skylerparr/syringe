@@ -14,11 +14,22 @@ defmodule MockBaz do
   end
 end
 
+defmodule MockedStruct do
+
+  defstruct name: nil, address: nil
+
+  def get_data(struct) do
+    struct
+  end 
+
+end
+
 defmodule Foo do
   use Injector
   inject MockBar
   inject MockBaz
   inject MockWorker
+  inject MockedStruct
 
   def go do
     MockBar.bar
@@ -35,6 +46,11 @@ defmodule Foo do
   def pipe do
     MockBaz.cat
       |> MockBar.with_args(nil, nil)
+  end
+
+  def struct(_) do
+    %MockedStruct{name: "foo", address: "bar"}
+    |> MockedStruct.get_data
   end
 end
 
@@ -191,6 +207,15 @@ defmodule MockerTest do
     intercept(Foo, :go, nil, with: fn() -> :ok end)
     Server.call_foo
     assert was_called(Foo, :go, nil) == once()
+  end
+
+  test "should not mock structs" do
+    mock(MockedStruct)
+    struct = %MockedStruct{name: "foo", address: "bar"}
+    intercept(MockedStruct, :get_data, [any()], with: fn(_) -> "things" end)
+
+    assert Foo.struct(struct) == "things"
+    assert was_called(MockedStruct, :get_data, [struct]) == once()
   end
 
 end
