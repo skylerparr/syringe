@@ -16,7 +16,7 @@ defmodule Injector do
   end
 
   defp strategy() do
-    Application.fetch_env!(:syringe, :injector_strategy)
+    Application.get_env(:syringe, :injector_strategy, AliasInjectingStrategy)
   end
 
   def get_module(definition) do
