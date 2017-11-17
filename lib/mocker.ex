@@ -15,6 +15,7 @@ defmodule Mocker do
     GenServer.call(__MODULE__, {:map_to_pid, map_pid, module_pid, module})
   end
 
+  def was_called({module, func, args}), do: was_called(module, func, args)
   def was_called(module, func, args \\ []) do
     map_pid = MockPidMapServer.get(self())
     module = get_injector_module(module)
@@ -24,10 +25,12 @@ defmodule Mocker do
   end
 
   def intercept(module, func, args, [with: intercept_func]) do
+    orig_module = module
     map_pid = MockPidMapServer.get(self())
     module = get_injector_module(module)
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, map_pid, module})
     GenServer.call(module_pid, {:set_interceptor, func, args, intercept_func})
+    {orig_module, func, args}
   end
 
   defp get_injector_module(module) do

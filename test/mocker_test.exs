@@ -254,6 +254,14 @@ defmodule MockerTest do
     assert was_called(MyProto, :handle_work, [data]) == once()
   end
 
+  test "should be validate the intercepted call" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    assert Foo.gone("a", 100, %{}) == {"a", 100, %{}}
+    assert Foo.gone("a", 100, []) == {"a", 100, []}
+    assert was_called(outcome) == twice()
+  end
+
 end
 
 

@@ -3,7 +3,7 @@ defmodule Injector.Mixfile do
 
   def project do
     [app: :syringe,
-     version: "0.10.8",
+     version: "0.10.9",
      elixir: "~> 1.2",
      description: description(),
      package: package(),
