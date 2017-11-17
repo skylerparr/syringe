@@ -74,6 +74,31 @@ defmodule Server do
   end
 end
 
+defprotocol MyProto do
+  def handle_work(data)
+end
+
+defimpl MyProto, for: Map do
+  def handle_work(_data) do
+    "bad"
+  end
+end
+
+defimpl MyProto, for: List do
+  def handle_work(_data) do
+    "bad list"
+  end
+end
+
+defmodule UseProtocol do
+  use Injector
+  inject MyProto
+
+  def do_things(data) do
+    MyProto.handle_work(data)
+  end
+end
+
 defmodule MockerTest do
   use ExUnit.Case, async: true
   doctest Mocker
@@ -216,6 +241,17 @@ defmodule MockerTest do
 
     assert Foo.struct(struct) == "things"
     assert was_called(MockedStruct, :get_data, [struct]) == once()
+  end
+
+  test "should mock protocols" do
+    data = %{foo: "bar"}
+    mock(MyProto)
+    intercept(MyProto, :handle_work, [data], with: fn(_) -> "mock proto data" end)
+    intercept(MyProto, :handle_work, [[]], with: :original_function)
+
+    assert UseProtocol.do_things(data) == "mock proto data"
+    assert UseProtocol.do_things([]) == "bad list"
+    assert was_called(MyProto, :handle_work, [data]) == once()
   end
 
 end
