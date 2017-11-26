@@ -24,12 +24,24 @@ defmodule MockedStruct do
 
 end
 
+defmodule MockDelegate do
+  defdelegate do_delegate(), to: MockDel
+end
+
+defmodule MockDel do
+  def do_delegate() do
+    "foo"
+  end
+end
+
+
 defmodule Foo do
   use Injector
   inject MockBar
   inject MockBaz
   inject MockWorker
   inject MockedStruct
+  inject MockDelegate
 
   def go do
     MockBar.bar
@@ -51,6 +63,10 @@ defmodule Foo do
   def struct(_) do
     %MockedStruct{name: "foo", address: "bar"}
     |> MockedStruct.get_data
+  end
+
+  def call_delegate() do
+    MockDelegate.do_delegate()
   end
 end
 
@@ -260,6 +276,13 @@ defmodule MockerTest do
     assert Foo.gone("a", 100, %{}) == {"a", 100, %{}}
     assert Foo.gone("a", 100, []) == {"a", 100, []}
     assert was_called(outcome) == twice()
+  end
+
+  test "should mock delegates" do
+    mock(MockDelegate)
+    outcome = intercept(MockDelegate, :do_delegate, [], with: :original_function)
+    assert "foo" == Foo.call_delegate()
+    assert was_called(outcome) == once()
   end
 
 end
