@@ -6,7 +6,7 @@ defmodule Mocked do
       use GenServer
       
       def start_mock_link do
-        GenServer.start_link(__MODULE__, %{call_count: %{}, interceptors: %{}})
+        GenServer.start(__MODULE__, %{call_count: %{}, interceptors: %{}})
       end
 
       def init(opt) do
