@@ -45,7 +45,12 @@ defmodule Mocked do
           true -> Map.put(interceptors, {func, args}, interceptors_list)
         end
         state = Map.put(state, :interceptors, interceptors) 
- 
+
+        interceptor = case interceptor do
+          nil -> :original_function
+          _ -> interceptor
+        end
+
         {:reply, interceptor, state}
       end
 
@@ -89,10 +94,10 @@ defmodule Mocked do
       defp mock_func(module, func_atom, args, original_func) do
         GenServer.call(Mocker, {module, func_atom, args, self()})
         interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self()})
-        if(interceptor == :original_function) do
-          original_func.() 
-        else 
+        if(interceptor != :original_function) do
           call_interceptor(interceptor, args)
+        else
+          original_func.()
         end
       end
 
