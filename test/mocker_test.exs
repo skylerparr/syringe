@@ -156,7 +156,7 @@ defmodule MockerTest do
 
   test "should intercept function" do
     mock(MockBar)
-    assert Foo.go == "Actual impl"
+    assert Foo.go == nil
     intercept(MockBar, :bar, nil, with: fn -> "intercepted" end)
     assert Foo.go == "intercepted"
   end
@@ -207,9 +207,9 @@ defmodule MockerTest do
 
   test "should assert was called with specific arguments" do
     mock(MockBar)
-    assert Foo.gone("a", {:b}, %{c: 1}) == {"a", {:b}, %{c: 1}}
-    assert Foo.gone("a", {:b}, %{c: 1}) == {"a", {:b}, %{c: 1}}
-    assert Foo.gone("a", 100, %{c: 1}) == {"a", 100, %{c: 1}}
+    assert Foo.gone("a", {:b}, %{c: 1}) == nil
+    assert Foo.gone("a", {:b}, %{c: 1}) == nil
+    assert Foo.gone("a", 100, %{c: 1}) == nil
     assert was_called(MockBar, :with_args, ["a", {:b}, %{c: 1}]) == twice()
     assert was_called(MockBar, :with_args, ["a", 100, %{c: 1}]) == once()
     assert was_called(MockBar, :with_args, ["b", 100, %{c: 1}]) == never()
@@ -221,7 +221,7 @@ defmodule MockerTest do
     intercept(MockBar, :with_args, ["b", {:c}, %{d: 1}], with: fn(_,_,_) -> {"foo"} end)
     assert Foo.gone("a", {:b}, %{c: 1}) == {"a", {:b}, %{c: 1}}
     assert Foo.gone("b", {:c}, %{d: 1}) == {"foo"}
-    assert Foo.gone("", "", "") == {"", "", ""}
+    assert Foo.gone("", "", "") == nil
     assert was_called(MockBar, :with_args, ["", "", ""]) == once()
   end
 
@@ -283,11 +283,6 @@ defmodule MockerTest do
     outcome = intercept(MockDelegate, :do_delegate, [], with: :original_function)
     assert "foo" == Foo.call_delegate()
     assert was_called(outcome) == once()
-  end
-
-  test "should call original_function by default" do
-    mock(MockBaz)
-    assert Foo.going == "do cat things"
   end
 
 end
