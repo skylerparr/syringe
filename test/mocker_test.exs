@@ -34,6 +34,42 @@ defmodule MockDel do
   end
 end
 
+defmodule MockTasks do
+  use Injector
+  inject Task
+
+  def run_tasks() do
+    task2 = Task.async(fn() ->
+      Task.async(__MODULE__, :run, ["foo"])
+      "bar"
+    end)
+
+    task2
+  end
+
+  def run(arg) do
+    arg
+  end
+end
+
+defmodule MockProcess do
+  use Injector
+  inject MockBaz
+
+  def do_action() do
+    {:ok, pid} = Agent.start(fn() -> nil end)
+    Task.start(fn() ->
+      Task.start_link(fn() ->
+        Task.async(__MODULE__, :exec, [pid])
+      end)
+    end)
+    pid
+  end
+
+  def exec(pid) do
+    Agent.update(pid, fn(_) -> MockBaz.cat() end)
+  end
+end
 
 defmodule Foo do
   use Injector
@@ -283,6 +319,32 @@ defmodule MockerTest do
     outcome = intercept(MockDelegate, :do_delegate, [], with: :original_function)
     assert "foo" == Foo.call_delegate()
     assert was_called(outcome) == once()
+  end
+
+  test "should handle intercepting functions with different arity" do
+    mock(Task)
+
+    expect1 = intercept(Task, :async, [any()], with: fn(fun) ->
+      result = fun.()
+      assert result == "bar"
+    end)
+    expect2 = intercept(Task, :async, [MockTasks, :run, any()], with: fn(mod, fun, args) ->
+      result = apply(mod, fun, args)
+      assert result == "foo"
+    end)
+
+    MockTasks.run_tasks()
+
+    assert expect1 |> was_called() == once()
+    assert expect2 |> was_called() == once()
+  end
+
+  test "should mock with nested processes" do
+    mock(MockBaz)
+    intercept(MockBaz, :cat, [], with: fn() -> "my intercepted data" end)
+    agent_pid = MockProcess.do_action()
+    :timer.sleep(10)
+    assert Agent.get(agent_pid, fn(state) -> state end) == "my intercepted data"
   end
 
 end

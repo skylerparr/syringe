@@ -57,10 +57,12 @@ defmodule Mocker do
     {:reply, state, state}
   end
   
-  def handle_call({:get_interceptor, module, func, args, test_pid}, _from, state) do
+  def handle_call({:get_interceptor, module, func, args, test_pid}, from, state) do
     module_pid = get_module_pid(state, module, test_pid)
     interceptor = cond do
-      module_pid == nil -> :original_function
+      is_atom(test_pid) -> :original_function
+      module_pid == nil -> find_ancestor_interceptor(module, func, args, from, state, test_pid)
+      module_pid == nil && is_pid(test_pid) -> :original_function
       true -> GenServer.call(module_pid, {:get_interceptor, func, args})
     end
     {:reply, interceptor, state}
@@ -72,6 +74,16 @@ defmodule Mocker do
       GenServer.call(module_pid, {:increment_call_count, func, args}) 
     end
     {:reply, state, state}
+  end
+
+  defp find_ancestor_interceptor(module, func, args, from, state, test_pid) do
+    pid_info = Process.info(test_pid) || [dictionary: []]
+    case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
+      nil -> :original_function
+      ancestor_pids -> ancestor_pid = List.first(ancestor_pids)
+                       {:reply, interceptor, _state} = handle_call({:get_interceptor, module, func, args, ancestor_pid}, from, state)
+                       interceptor || :original_function
+    end
   end
 
   defp get_module_pid(state, module, test_pid) do
