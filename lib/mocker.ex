@@ -101,7 +101,7 @@ defmodule Mocker do
                                     ancestor_pid -> get_module_pid(state, module, ancestor_pid)
                                   end
                end
-        p -> module_pid
+        module_pid -> module_pid
       end
     else
       nil
