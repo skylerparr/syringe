@@ -341,10 +341,11 @@ defmodule MockerTest do
 
   test "should mock with nested processes" do
     mock(MockBaz)
-    intercept(MockBaz, :cat, [], with: fn() -> "my intercepted data" end)
+    expectation = intercept(MockBaz, :cat, [], with: fn() -> "my intercepted data" end)
     agent_pid = MockProcess.do_action()
     :timer.sleep(10)
     assert Agent.get(agent_pid, fn(state) -> state end) == "my intercepted data"
+    assert expectation |> was_called() == once()
   end
 
 end

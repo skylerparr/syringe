@@ -87,8 +87,25 @@ defmodule Mocker do
   end
 
   defp get_module_pid(state, module, test_pid) do
-    Map.get(state, test_pid, %{})
-      |> Map.get(module)
+    module_pid = Map.get(state, test_pid, %{})
+    |> Map.get(module)
+
+    if(test_pid) do
+      case module_pid do
+        nil -> pid_info = Process.info(test_pid) || [dictionary: []]
+               case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
+                 nil -> nil
+                 ancestor_pids -> ancestor_pid = List.first(ancestor_pids)
+                                  case ancestor_pid do
+                                    nil -> nil
+                                    ancestor_pid -> get_module_pid(state, module, ancestor_pid)
+                                  end
+               end
+        p -> module_pid
+      end
+    else
+      nil
+    end
   end
 
   def never, do: :never  
