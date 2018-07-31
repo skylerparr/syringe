@@ -90,6 +90,10 @@ defmodule Mocker do
     module_pid = Map.get(state, test_pid, %{})
     |> Map.get(module)
 
+    if(module_pid |> is_atom()) do
+      :timer.sleep(100) # race condition?
+    end
+
     if(test_pid) do
       case module_pid do
         nil -> pid_info = Process.info(test_pid) || [dictionary: []]

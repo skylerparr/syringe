@@ -151,6 +151,31 @@ defmodule UseProtocol do
   end
 end
 
+defmodule MyGenServer do
+  use Injector
+  use GenServer
+
+  inject Application
+
+  def start_link() do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
+  def init(_) do
+    Task.start_link(&break_cache/0)
+    {:ok, nil}
+  end
+
+  def break_cache() do
+    poll_time_ms() |> :timer.sleep()
+    break_cache()
+  end
+
+  defp poll_time_ms() do
+    (Application.get_env(:core_data, :poll_time_ms) || "5000") |> String.to_integer()
+  end
+end
+
 defmodule MockerTest do
   use ExUnit.Case, async: true
   doctest Mocker
@@ -346,6 +371,10 @@ defmodule MockerTest do
     :timer.sleep(10)
     assert Agent.get(agent_pid, fn(state) -> state end) == "my intercepted data"
     assert expectation |> was_called() == once()
+  end
+
+  test "should mock GenServer with named server" do
+    MyGenServer.start_link()
   end
 
 end
