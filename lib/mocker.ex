@@ -90,8 +90,9 @@ defmodule Mocker do
     module_pid = Map.get(state, test_pid, %{})
     |> Map.get(module)
 
-    if(module_pid |> is_atom()) do
-      :timer.sleep(100) # race condition?
+    test_pid = case(test_pid |> is_atom()) do
+      true -> Process.whereis(test_pid)
+      false -> test_pid
     end
 
     if(test_pid) do
