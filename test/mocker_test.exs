@@ -156,6 +156,8 @@ defmodule MyGenServer do
   use GenServer
 
   inject Application
+  inject MockBar
+  inject Task
 
   def start_link() do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
@@ -168,11 +170,12 @@ defmodule MyGenServer do
 
   def break_cache() do
     poll_time_ms() |> :timer.sleep()
+    MockBar.bar()
     break_cache()
   end
 
   defp poll_time_ms() do
-    (Application.get_env(:core_data, :poll_time_ms) || "5000") |> String.to_integer()
+    (Application.get_env(:core_data, :poll_time_ms) || "0") |> String.to_integer()
   end
 end
 
@@ -375,6 +378,13 @@ defmodule MockerTest do
 
   test "should mock GenServer with named server" do
     MyGenServer.start_link()
+  end
+
+  test "should mock nested process inside GenServer" do
+    MyGenServer.start_link()
+    mock(MockBar)
+    bar_call = intercept(MockBar, :bar, [], with: fn() -> "data" |> IO.inspect end)
+    assert bar_call |> was_called() == once()
   end
 
 end

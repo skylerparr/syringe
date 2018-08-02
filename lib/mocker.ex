@@ -99,11 +99,15 @@ defmodule Mocker do
       case module_pid do
         nil -> pid_info = Process.info(test_pid) || [dictionary: []]
                case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
-                 nil -> nil
+                 nil -> check_linked_pids(state, module, test_pid)
                  ancestor_pids -> ancestor_pid = List.first(ancestor_pids)
-                                  case ancestor_pid do
-                                    nil -> nil
-                                    ancestor_pid -> get_module_pid(state, module, ancestor_pid)
+                                  if(ancestor_pid == test_pid) do
+                                    ancestor_pid
+                                  else
+                                    case ancestor_pid do
+                                      nil -> nil
+                                      ancestor_pid -> get_module_pid(state, module, ancestor_pid)
+                                    end
                                   end
                end
         module_pid -> module_pid
@@ -111,6 +115,28 @@ defmodule Mocker do
     else
       nil
     end
+  end
+
+  defp check_linked_pids(state, module, test_pid) do
+    case (Process.info(test_pid)[:links] || []) |> List.first do
+      nil -> nil
+      pid -> pid_info = Process.info(pid) || [dictionary: []]
+             case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
+               nil -> nil
+               ancestor_pids -> ancestor_pid = List.first(ancestor_pids)
+#                                IO.inspect {"module_pid", module, ancestor_pid, test_pid}
+                                if(ancestor_pid == test_pid) do
+                                  ancestor_pid
+                                else
+                                  case ancestor_pid do
+                                    nil -> nil
+                                    ancestor_pid -> get_module_pid(state, module, ancestor_pid)
+                                  end
+                                end
+             end
+    end
+
+    nil
   end
 
   def never, do: :never  
