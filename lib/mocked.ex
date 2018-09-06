@@ -87,8 +87,8 @@ defmodule Mocked do
         original_func.()
       end
       defp mock_func(module, func_atom, args, original_func) do
-        GenServer.call(Mocker, {module, func_atom, args, self()})
-        interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self()})
+        GenServer.call(Mocker, {module, func_atom, args, self()}, 60000)
+        interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self()}, 60000)
         if(interceptor == :original_function) do
           original_func.()
         else

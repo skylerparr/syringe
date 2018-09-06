@@ -63,7 +63,7 @@ defmodule Mocker do
       is_atom(test_pid) -> :original_function
       module_pid == nil -> find_ancestor_interceptor(module, func, args, from, state, test_pid)
       module_pid == nil && is_pid(test_pid) -> :original_function
-      true -> GenServer.call(module_pid, {:get_interceptor, func, args})
+      true -> GenServer.call(module_pid, {:get_interceptor, func, args}, 60000)
     end
     {:reply, interceptor, state}
   end
