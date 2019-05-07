@@ -116,6 +116,8 @@ defmodule Server do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
+  def init(s), do: {:ok, s}
+
   def call_foo do
     GenServer.call(__MODULE__, :call_foo)
   end

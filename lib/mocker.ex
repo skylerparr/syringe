@@ -6,6 +6,8 @@ defmodule Mocker do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
+  def init(s), do: {:ok, s}
+
   def mock(module), do: mock(module, self())
   def mock(module, pid) do
     MockPidMapServer.map(self(), pid)
