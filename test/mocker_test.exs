@@ -116,6 +116,10 @@ defmodule Server do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
+  def init(init_arg) do
+    {:ok, init_arg}
+  end
+
   def call_foo do
     GenServer.call(__MODULE__, :call_foo)
   end
@@ -334,7 +338,7 @@ defmodule MockerTest do
     assert was_called(MyProto, :handle_work, [data]) == once()
   end
 
-  test "should be validate the intercepted call" do
+  test "should be able to validate the intercepted call" do
     mock(MockBar)
     outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
     assert Foo.gone("a", 100, %{}) == {"a", 100, %{}}
@@ -385,6 +389,14 @@ defmodule MockerTest do
     mock(MockBar)
     bar_call = intercept(MockBar, :bar, [], with: fn() -> "data" |> IO.inspect end)
     assert bar_call |> was_called() == once()
+  end
+
+  test "should not automock module if explicitly told not to do so" do
+    mock(MockBaz)
+    assert Foo.going() == nil
+
+    mock(MockBaz, no_auto_mock: true)
+    assert Foo.going() == "do cat things"
   end
 
 end

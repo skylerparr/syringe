@@ -2,15 +2,24 @@ defmodule Mocker do
   use GenServer
 
   def start_link do
-    MockPidMapServer.start_link
+    MockPidMapServer.start_link()
+    MockerOptions.start_link()
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
+  
+  def init(init_arg) do
+    {:ok, init_arg}
+  end
 
-  def mock(module), do: mock(module, self())
-  def mock(module, pid) do
+  def mock(module), do: mock(module, self(), no_auto_mock: false)
+  def mock(module, no_auto_mock: true) do
+    mock(module, self(), no_auto_mock: true)
+  end
+  def mock(module, pid, opts \\ nil) do
     MockPidMapServer.map(self(), pid)
     map_pid = MockPidMapServer.get(self())
     module = get_injector_module(module)
+    MockerOptions.store_settings(self(), module, opts)
     {:ok, module_pid} = apply(module, :start_mock_link, [])
     GenServer.call(__MODULE__, {:map_to_pid, map_pid, module_pid, module})
   end
@@ -52,7 +61,7 @@ defmodule Mocker do
 
   def handle_call({:map_to_pid, test_pid, module_pid, module}, _from, state) do
     module_map = Map.get(state, test_pid, %{})
-      |> Map.put(module, module_pid) 
+    |> Map.put(module, module_pid)
     state = Map.put(state, test_pid, module_map) 
     {:reply, state, state}
   end

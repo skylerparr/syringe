@@ -225,6 +225,78 @@ To use the injector, it behaves similar to ```alias```, except you use the word 
   end
   ```
 
+## New in version 1.2
+
+By default, when you call `mock` on a module, it'll auto stub all function
+calls and return `nil` by default. Sometimes you may have a module that
+is used pretty extensively in your test and you don't want to go through
+and intercept all the functions just to call the `:original_function`.
+Well, you can tell the mock function to not auto mock. In your unit test,
+when you call mock, just pass `no_auto_mock: true` and it'll default
+to call your original_functions instead of the auto-mocked ones.
+
+Here's an example:
+
+Given this module:
+```
+defmodule Foo do
+  def first(), do: 1
+  def second(), do: 2
+end
+
+defmodule Bar do
+  use Injector
+  inject Foo
+
+  def call_foo() do
+    a = Foo.first()
+    b = Foo.second()
+
+    {a, b}
+  end
+end
+
+defmodule BarTest do
+  use ExUnit.Case, async: true
+
+  import Mocker
+
+  test "foo should return a tuple of numbers" do
+    mock(Foo)
+    intercept(Foo, :first, [], with: fn() -> 100 end)
+    assert Bar.call_foo() == {100, nil} # nil because we didn't intercept the :second function
+
+    mock(Foo, no_auto_mock: true)
+    intercept(Foo, :first, [], with: fn() -> 100 end)
+    assert Bar.call_foo() == {100, 2} # called the original function as specified
+  end
+end
+```
+
+
+## Gotcha's/Limitations
+
+Due to the way that syringe handles the inject as an alias, if you refer
+to the full module name, syringe is unable to intercept the function
+calls. Here's an example:
+
+```
+defmodule Oh.My.Foo do
+  def bar() do
+
+  end
+end
+
+defmodule Oh.My.Bar do
+  use Injector
+  inject Oh.My.Foo
+
+  def call_foo() do
+    Oh.My.Foo.bar() # <-- cannot be intercepted, you must strictly call Foo.bar()
+  end
+end
+```
+
 ## Installation
 
   1. Add `syringe` to your list of dependencies in `mix.exs`:

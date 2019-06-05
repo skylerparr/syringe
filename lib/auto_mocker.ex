@@ -31,7 +31,7 @@ defmodule AutoMocker do
           def unquote({fun, [], args}) do
             mock_func(__MODULE__, unquote(fun), unquote(var_args), fn ->
               unquote(real_function)
-            end)
+            end, nil)
           end
         end 
       end

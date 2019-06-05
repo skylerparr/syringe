@@ -5,6 +5,10 @@ defmodule MockPidMapServer do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
+  def init(init_arg) do
+    {:ok, init_arg}
+  end
+
   def map(key_pid, map_to_pid) do
     GenServer.call(__MODULE__, {:map, key_pid, map_to_pid})
   end
