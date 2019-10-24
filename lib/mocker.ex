@@ -33,6 +33,40 @@ defmodule Mocker do
     times(call_count)
   end
 
+  def at_least(actual_count, expected_count) do
+    actual_count = get_count(actual_count)
+    {:at_least, (actual_count >= expected_count)}
+  end
+
+  def more_than(actual_count, expected_count) do
+    actual_count = get_count(actual_count)
+    {:more_than, (actual_count > expected_count)}
+  end
+
+  def at_most(actual_count, expect_count) do
+    actual_count = get_count(actual_count)
+    {:at_most, (actual_count <= expect_count)}
+  end
+
+  def less_than(actual_count, expect_count) do
+    actual_count = get_count(actual_count)
+    {:less_than, (actual_count < expect_count)}
+  end
+
+  def between(actual_count, range) do
+    actual_count = get_count(actual_count)
+    {:between, Enum.member?(range, actual_count)}
+  end
+
+  defp get_count(count_atom) do
+    case count_atom do
+      :never -> 0
+      :once -> 1
+      :twice -> 2
+      _ -> count_atom |> Atom.to_string() |> String.split(" ") |> hd |> String.to_integer
+    end
+  end
+
   def intercept(module, func, args, [with: intercept_func]) do
     orig_module = module
     map_pid = MockPidMapServer.get(self())
@@ -133,7 +167,6 @@ defmodule Mocker do
              case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
                nil -> nil
                ancestor_pids -> ancestor_pid = List.first(ancestor_pids)
-#                                IO.inspect {"module_pid", module, ancestor_pid, test_pid}
                                 if(ancestor_pid == test_pid) do
                                   ancestor_pid
                                 else
@@ -154,6 +187,11 @@ defmodule Mocker do
   def times(0), do: never()
   def times(1), do: once()
   def times(2), do: twice()
+  def times({:at_least, status}), do: status
+  def times({:more_than, status}), do: status
+  def times({:at_most, status}), do: status
+  def times({:less_than, status}), do: status
+  def times({:between, status}), do: status
   def times(num) do
     "#{num} times" |> String.to_atom
   end

@@ -271,8 +271,25 @@ defmodule BarTest do
     assert Bar.call_foo() == {100, 2} # called the original function as specified
   end
 end
-```
+```  
 
+## New in version 1.3
+
+Added some new verification functions. Before version 1.3 you could only verify
+if the function was exactly N times. Now you can verify at least, more than, at most,
+less than, and between. Here are some examples:
+
+```   
+# the set up is the same
+outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+...
+# now we can
+assert outcome |> was_called() |> at_least(3) |> times()
+assert outcome |> was_called() |> more_than(3) |> times()
+assert outcome |> was_called() |> at_most(3) |> times()
+assert outcome |> was_called() |> less_than(3) |> times()
+assert outcome |> was_called() |> between(3..4) |> times()
+``` 
 
 ## Gotcha's/Limitations
 

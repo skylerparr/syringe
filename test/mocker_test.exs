@@ -419,6 +419,121 @@ defmodule MockerTest do
     assert Foo.meow() == "mocked_meow"
     assert meow_call |> was_called() == once()
   end
+
+  test "should validate a function was called at_least N times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    assert outcome |> was_called() |> at_least(3) |> times()
+  end
+
+  test "should validate a function was called exactly N times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    assert outcome |> was_called() |> at_least(3) |> times()
+  end
+
+  test "should fail if a function was not called at_least N times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    refute outcome |> was_called() |> at_least(3) |> times()
+  end
+
+  test "should validate a function was called more_than N times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    assert outcome |> was_called() |> more_than(3) |> times()
+  end
+
+  test "should fail if a function was called exactly N times and expecting more than N times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    refute outcome |> was_called() |> more_than(3) |> times()
+  end
+
+  test "should validate a function was called at_most N times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    assert outcome |> was_called() |> at_most(3) |> times()
+
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    assert outcome |> was_called() |> at_most(3) |> times()
+  end
+
+  test "should fail if a function was called more times than allowed" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    refute outcome |> was_called() |> at_most(3) |> times()
+  end
+
+  test "should validate a function was called less_than N times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    assert outcome |> was_called() |> less_than(3) |> times()
+  end
+
+  test "should fail if a function was called less_than N times and invoked more than N times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    refute outcome |> was_called() |> less_than(3) |> times()
+  end
+
+  test "should validate if a function was called between N and M times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, [])
+    Foo.gone("a", 100, [])
+    assert outcome |> was_called() |> between(3..4) |> times()
+  end
+
+  test "should fail if a function was not called between N and M times" do
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, %{})
+    refute outcome |> was_called() |> between(3..4) |> times()
+
+    mock(MockBar)
+    outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, %{})
+    Foo.gone("a", 100, %{})
+    refute outcome |> was_called() |> between(3..4) |> times()
+  end
 end
 
 
