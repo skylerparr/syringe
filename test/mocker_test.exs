@@ -12,6 +12,16 @@ defmodule MockBaz do
   def cat do
     "do cat things"
   end
+
+  if Mix.env() == :test do
+    def meow() do
+      "the cat says meow"
+    end
+  else
+    def meow() do
+      "the cat only says meow in test"
+    end
+  end
 end
 
 defmodule MockedStruct do
@@ -103,6 +113,10 @@ defmodule Foo do
 
   def call_delegate() do
     MockDelegate.do_delegate()
+  end
+
+  def meow() do
+    MockBaz.meow()
   end
 end
 
@@ -387,7 +401,7 @@ defmodule MockerTest do
   test "should mock nested process inside GenServer" do
     MyGenServer.start_link()
     mock(MockBar)
-    bar_call = intercept(MockBar, :bar, [], with: fn() -> "data" |> IO.inspect end)
+    bar_call = intercept(MockBar, :bar, [], with: fn() -> "data" end)
     assert bar_call |> was_called() == once()
   end
 
@@ -399,6 +413,12 @@ defmodule MockerTest do
     assert Foo.going() == "do cat things"
   end
 
+  test "should mock a function that has conditional compilation" do
+    mock(MockBaz)
+    meow_call = intercept(MockBaz, :meow, [], with: fn() -> "mocked_meow" end)
+    assert Foo.meow() == "mocked_meow"
+    assert meow_call |> was_called() == once()
+  end
 end
 
 
