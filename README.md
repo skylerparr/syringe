@@ -314,6 +314,12 @@ defmodule Oh.My.Bar do
 end
 ```
 
+Sometimes you may need to mock or test modules that are GenServers that get started by the application. This can
+be problematic since the Application will start before `Mocker.start_link()` gets called causing the process to 
+exit before the tests even start. This is only an issue during testing. The recommended approach is to not start 
+the workers during tests for several reasons. It makes testing the GenServers problematic in general, especially 
+with regards to named GenServers. You can read more into the details on this issue (https://github.com/skylerparr/syringe/issues/6).
+
 ## Installation
 
   1. Add `syringe` to your list of dependencies in `mix.exs`:
