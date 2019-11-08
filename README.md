@@ -335,7 +335,8 @@ with regards to named GenServers. You can read more into the details on this iss
   ```elixir
   config :syringe, injector_strategy: MockInjectingStrategy
   ```
-  in your other configs:
+   
+   in your other configs:
    
   ```elixir
   config :syringe, injector_strategy: AliasInjectingStrategy
