@@ -331,18 +331,21 @@ end
 ```
 
   2. Configure syringe for your environments
-    in test/config.exs (if you want to use mocking)
+    in test/config.exs (if you want to use mocking):
 
 ```elixir
 config :syringe, injector_strategy: MockInjectingStrategy
 ```
-    in your other configs
+   in your other configs:
+   
 ```elixir
 config :syringe, injector_strategy: AliasInjectingStrategy
 ```
-  3. Turn on mocking for your tests. In your test/test_helper.exs
+
+  3. Turn on mocking for your tests. In your test/test_helper.exs:
   
 ```elixir
 Mocker.start_link
 ```
+
   4. You're ready to start injecting implementations
