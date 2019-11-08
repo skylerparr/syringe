@@ -238,7 +238,7 @@ to call your original_functions instead of the auto-mocked ones.
 Here's an example:
 
 Given this module:
-```
+```elixir
 defmodule Foo do
   def first(), do: 1
   def second(), do: 2
@@ -279,7 +279,7 @@ Added some new verification functions. Before version 1.3 you could only verify
 if the function was exactly N times. Now you can verify at least, more than, at most,
 less than, and between. Here are some examples:
 
-```   
+```elixir
 # the set up is the same
 outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: :original_function)
 ...
