@@ -297,7 +297,7 @@ Due to the way that syringe handles the inject as an alias, if you refer
 to the full module name, syringe is unable to intercept the function
 calls. Here's an example:
 
-```
+```elixir
 defmodule Oh.My.Foo do
   def bar() do
 
@@ -323,26 +323,26 @@ with regards to named GenServers. You can read more into the details on this iss
 ## Installation
 
   1. Add `syringe` to your list of dependencies in `mix.exs`:
-
-    ```elixir
-    def deps do
-      [{:syringe, "~> 1.0.0"}]
-    end
-    ```
+  
+```elixir
+def deps do
+  [{:syringe, "~> 1.0.0"}]
+end
+```
 
   2. Configure syringe for your environments
     in test/config.exs (if you want to use mocking)
 
-    ```elixir
-    config :syringe, injector_strategy: MockInjectingStrategy
-    ```
+```elixir
+config :syringe, injector_strategy: MockInjectingStrategy
+```
     in your other configs
-    ```elixir
-    config :syringe, injector_strategy: AliasInjectingStrategy
-    ```
+```elixir
+config :syringe, injector_strategy: AliasInjectingStrategy
+```
   3. Turn on mocking for your tests. In your test/test_helper.exs
   
-    ```elixir
-    Mocker.start_link
-    ```
+```elixir
+Mocker.start_link
+```
   4. You're ready to start injecting implementations
