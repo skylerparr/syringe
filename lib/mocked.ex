@@ -1,10 +1,13 @@
 defmodule Mocked do
 
   defmacro __using__(_) do
+    mock_module_code()
+  end
 
+  def mock_module_code do
     quote do
       use GenServer
-      
+
       def start_mock_link do
         GenServer.start(__MODULE__, %{call_count: %{}, interceptors: %{}})
       end
@@ -12,7 +15,7 @@ defmodule Mocked do
       def init(opt) do
         {:ok, opt}
       end
-      
+
       def handle_call({:call_count, func, args}, _from, %{call_count: call_count, interceptors: interceptors} = state) do
         {func, args} = get_matching_args([], interceptors, func, args) |> elem(0)
         count = Map.get(call_count, {func, args}, 0)
@@ -30,9 +33,9 @@ defmodule Mocked do
       def handle_call({:set_interceptor, func, args, intercept_func}, _from, %{interceptors: interceptors} = state) do
         args = args || []
         interceptors_list = Map.get(interceptors, {func, args}, [])
-        interceptors_list = interceptors_list ++ [intercept_func] 
+        interceptors_list = interceptors_list ++ [intercept_func]
         interceptors = Map.put(interceptors, {func, args}, interceptors_list)
-        state = Map.put(state, :interceptors, interceptors) 
+        state = Map.put(state, :interceptors, interceptors)
         {:reply, state, state}
       end
 
@@ -44,25 +47,25 @@ defmodule Mocked do
           interceptors_list == [] -> interceptors
           true -> Map.put(interceptors, {func, args}, interceptors_list)
         end
-        state = Map.put(state, :interceptors, interceptors) 
+        state = Map.put(state, :interceptors, interceptors)
 
         {:reply, interceptor, state}
       end
 
       defp get_interceptors(interceptors, func, args) do
         found = Map.get(interceptors, {func, args}, [])
-          |> get_matching_args(interceptors, func, args)
-          |> elem(1)
+                |> get_matching_args(interceptors, func, args)
+                |> elem(1)
       end
 
       defp get_matching_args([], map, func, args) do
         Enum.find(map, fn({{function, arguments}, interceptor}) ->
           if(function == func) do
             found = Enum.with_index(arguments)
-              |> Enum.all?(fn({item, index}) ->
-                original_arg = Enum.at(args, index)
-                (item == original_arg || item == :any)
-              end)
+                    |> Enum.all?(fn({item, index}) ->
+              original_arg = Enum.at(args, index)
+              (item == original_arg || item == :any)
+            end)
           else
             false
           end
@@ -107,9 +110,8 @@ defmodule Mocked do
             nil
         end
       end
-   end
+    end
   end
-
 end
 
 

@@ -197,6 +197,18 @@ defmodule MyGenServer do
   end
 end
 
+defmodule LocalMock do
+  use Injector
+
+  def foo() do
+    bar()
+  end
+
+  def bar() do
+    :error
+  end
+end
+
 defmodule MockerTest do
   use ExUnit.Case, async: true
   doctest Mocker
@@ -533,6 +545,13 @@ defmodule MockerTest do
     Foo.gone("a", 100, %{})
     Foo.gone("a", 100, %{})
     refute outcome |> was_called() |> between(3..4) |> times()
+  end
+
+  test "should mock local functions" do
+    local_mock(LocalMock)
+    local_intercept(LocalMock, :bar, [], with: fn() -> :ok end)
+
+    assert LocalMock.foo() == :ok
   end
 end
 

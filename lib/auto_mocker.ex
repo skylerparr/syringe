@@ -19,13 +19,13 @@ defmodule AutoMocker do
     end
   end
 
-  defp gen_interface(real_module, functions) do
+  def gen_interface(real_module, functions) do
     Enum.map(functions, fn({fun, arity}) ->
       args = generate_args(arity)
       var_args = generate_var_args(arity) 
       real_function = quote do unquote(real_module).unquote(fun)() end
       real_function = real_function |> put_elem(2, var_args)
-      #init and start_mock_link should not be mocked
+      # init and start_mock_link should not be mocked
       if(fun != :start_mock_link && fun != :init ) do
         quote do
           def unquote({fun, [], args}) do

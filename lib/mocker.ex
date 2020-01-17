@@ -24,6 +24,18 @@ defmodule Mocker do
     GenServer.call(__MODULE__, {:map_to_pid, map_pid, module_pid, module})
   end
 
+  def local_mock(module) do
+    local_mock(module, self())
+  end
+
+  def local_mock(module, pid, opts \\ nil) do
+    MockPidMapServer.map(self(), pid)
+    map_pid = MockPidMapServer.get(self())
+    MockerOptions.store_settings(self(), module, opts)
+    {:ok, module_pid} = apply(module, :start_mock_link, [])
+    GenServer.call(__MODULE__, {:map_to_pid, map_pid, module_pid, module})
+  end
+
   def was_called({module, func, args}), do: was_called(module, func, args)
   def was_called(module, func, args \\ []) do
     map_pid = MockPidMapServer.get(self())
@@ -65,6 +77,14 @@ defmodule Mocker do
       :twice -> 2
       _ -> count_atom |> Atom.to_string() |> String.split(" ") |> hd |> String.to_integer
     end
+  end
+
+  def local_intercept(module, func, args, [with: intercept_func]) do
+    orig_module = module
+    map_pid = MockPidMapServer.get(self())
+    module_pid = GenServer.call(__MODULE__, {:get_module_pid, map_pid, module})
+    GenServer.call(module_pid, {:set_interceptor, func, args, intercept_func})
+    {orig_module, func, args}
   end
 
   def intercept(module, func, args, [with: intercept_func]) do
