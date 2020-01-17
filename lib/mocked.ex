@@ -83,19 +83,30 @@ defmodule Mocked do
       defp call_interceptor(interceptor, nil), do: interceptor.()
       defp call_interceptor(interceptor, args), do: apply(interceptor, args)
 
-      defp mock_func(module, :__struct__, args, original_func) do
+      defp mock_func(module, :__struct__, args, original_func, _) do
         original_func.()
       end
-      defp mock_func(module, func_atom, args, original_func) do
+      defp mock_func(module, func_atom, args, original_func, no_auto_mock) do
         GenServer.call(Mocker, {module, func_atom, args, self()}, 60000)
-        interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self()}, 60000)
-        if(interceptor == :original_function) do
-          original_func.()
-        else
-          call_interceptor(interceptor, args)
+        interceptor = GenServer.call(Mocker, {:get_interceptor, module, func_atom, args, self()})
+        case interceptor do
+          :original_function ->
+            original_func.()
+          nil ->
+            handle_mocker_options(module, original_func)
+          interceptor ->
+            call_interceptor(interceptor, args)
         end
       end
 
+      defp handle_mocker_options(module, original_func) do
+        case MockerOptions.get_setting(self(), module) do
+          [no_auto_mock: true] ->
+            original_func.()
+          _ ->
+            nil
+        end
+      end
    end
   end
 

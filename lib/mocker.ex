@@ -2,17 +2,24 @@ defmodule Mocker do
   use GenServer
 
   def start_link do
-    MockPidMapServer.start_link
+    MockPidMapServer.start_link()
+    MockerOptions.start_link()
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
+  
+  def init(init_arg) do
+    {:ok, init_arg}
+  end
 
-  def init(s), do: {:ok, s}
-
-  def mock(module), do: mock(module, self())
-  def mock(module, pid) do
+  def mock(module), do: mock(module, self(), no_auto_mock: false)
+  def mock(module, no_auto_mock: true) do
+    mock(module, self(), no_auto_mock: true)
+  end
+  def mock(module, pid, opts \\ nil) do
     MockPidMapServer.map(self(), pid)
     map_pid = MockPidMapServer.get(self())
     module = get_injector_module(module)
+    MockerOptions.store_settings(self(), module, opts)
     {:ok, module_pid} = apply(module, :start_mock_link, [])
     GenServer.call(__MODULE__, {:map_to_pid, map_pid, module_pid, module})
   end
@@ -24,6 +31,40 @@ defmodule Mocker do
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, map_pid, module})
     call_count = GenServer.call(module_pid, {:call_count, func, args})
     times(call_count)
+  end
+
+  def at_least(actual_count, expected_count) do
+    actual_count = get_count(actual_count)
+    {:at_least, (actual_count >= expected_count)}
+  end
+
+  def more_than(actual_count, expected_count) do
+    actual_count = get_count(actual_count)
+    {:more_than, (actual_count > expected_count)}
+  end
+
+  def at_most(actual_count, expect_count) do
+    actual_count = get_count(actual_count)
+    {:at_most, (actual_count <= expect_count)}
+  end
+
+  def less_than(actual_count, expect_count) do
+    actual_count = get_count(actual_count)
+    {:less_than, (actual_count < expect_count)}
+  end
+
+  def between(actual_count, range) do
+    actual_count = get_count(actual_count)
+    {:between, Enum.member?(range, actual_count)}
+  end
+
+  defp get_count(count_atom) do
+    case count_atom do
+      :never -> 0
+      :once -> 1
+      :twice -> 2
+      _ -> count_atom |> Atom.to_string() |> String.split(" ") |> hd |> String.to_integer
+    end
   end
 
   def intercept(module, func, args, [with: intercept_func]) do
@@ -54,7 +95,7 @@ defmodule Mocker do
 
   def handle_call({:map_to_pid, test_pid, module_pid, module}, _from, state) do
     module_map = Map.get(state, test_pid, %{})
-      |> Map.put(module, module_pid) 
+    |> Map.put(module, module_pid)
     state = Map.put(state, test_pid, module_map) 
     {:reply, state, state}
   end
@@ -126,7 +167,6 @@ defmodule Mocker do
              case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
                nil -> nil
                ancestor_pids -> ancestor_pid = List.first(ancestor_pids)
-#                                IO.inspect {"module_pid", module, ancestor_pid, test_pid}
                                 if(ancestor_pid == test_pid) do
                                   ancestor_pid
                                 else
@@ -147,6 +187,11 @@ defmodule Mocker do
   def times(0), do: never()
   def times(1), do: once()
   def times(2), do: twice()
+  def times({:at_least, status}), do: status
+  def times({:more_than, status}), do: status
+  def times({:at_most, status}), do: status
+  def times({:less_than, status}), do: status
+  def times({:between, status}), do: status
   def times(num) do
     "#{num} times" |> String.to_atom
   end
