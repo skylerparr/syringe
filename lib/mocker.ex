@@ -123,7 +123,8 @@ defmodule Mocker do
     pid_info = Process.info(test_pid) || [dictionary: []]
     case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
       nil -> :original_function
-      ancestor_pids -> ancestor_pid = List.first(ancestor_pids)
+      ancestor_pids ->
+        ancestor_pid = List.last(ancestor_pids)
                        {:reply, interceptor, _state} = handle_call({:get_interceptor, module, func, args, ancestor_pid}, from, state)
                        interceptor || :original_function
     end
@@ -143,7 +144,7 @@ defmodule Mocker do
         nil -> pid_info = Process.info(test_pid) || [dictionary: []]
                case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
                  nil -> check_linked_pids(state, module, test_pid)
-                 ancestor_pids -> ancestor_pid = List.first(ancestor_pids)
+                 ancestor_pids -> ancestor_pid = List.last(ancestor_pids)
                                   if(ancestor_pid == test_pid) do
                                     ancestor_pid
                                   else
@@ -166,7 +167,7 @@ defmodule Mocker do
       pid -> pid_info = Process.info(pid) || [dictionary: []]
              case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
                nil -> nil
-               ancestor_pids -> ancestor_pid = List.first(ancestor_pids)
+               ancestor_pids -> ancestor_pid = List.last(ancestor_pids)
                                 if(ancestor_pid == test_pid) do
                                   ancestor_pid
                                 else

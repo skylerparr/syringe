@@ -24,7 +24,7 @@ defmodule MockBaz do
   end
 end
 
-defmodule MockedStruct do
+defmodule Mocker.MockedStruct do
 
   defstruct name: nil, address: nil
 
@@ -86,7 +86,7 @@ defmodule Foo do
   inject MockBar
   inject MockBaz
   inject MockWorker
-  inject MockedStruct
+  inject Mocker.MockedStruct
   inject MockDelegate
 
   def go do
@@ -106,9 +106,10 @@ defmodule Foo do
       |> MockBar.with_args(nil, nil)
   end
 
-  def struct(_) do
-    %MockedStruct{name: "foo", address: "bar"}
+  def struct(struct) do
+    %Mocker.MockedStruct{name: "foo", address: "bar"}
     |> MockedStruct.get_data
+#    MockedStruct.get_data(struct)
   end
 
   def call_delegate() do
@@ -333,12 +334,12 @@ defmodule MockerTest do
   end
 
   test "should not mock structs" do
-    mock(MockedStruct)
-    struct = %MockedStruct{name: "foo", address: "bar"}
-    intercept(MockedStruct, :get_data, [any()], with: fn(_) -> "things" end)
+    mock(Mocker.MockedStruct)
+    struct = %Mocker.MockedStruct{name: "foo", address: "bar"}
+    intercept(Mocker.MockedStruct, :get_data, [any()], with: fn(_) -> "things" end)
 
     assert Foo.struct(struct) == "things"
-    assert was_called(MockedStruct, :get_data, [struct]) == once()
+    assert was_called(Mocker.MockedStruct, :get_data, [struct]) == once()
   end
 
   test "should mock protocols" do
@@ -390,6 +391,18 @@ defmodule MockerTest do
     expectation = intercept(MockBaz, :cat, [], with: fn() -> "my intercepted data" end)
     agent_pid = MockProcess.do_action()
     :timer.sleep(10)
+    assert Agent.get(agent_pid, fn(state) -> state end) == "my intercepted data"
+    assert expectation |> was_called() == once()
+  end
+
+  test "should mock inside test processes" do
+    mock(MockBaz)
+    expectation = intercept(MockBaz, :cat, [], with: fn() -> "my intercepted data" end)
+    task = Task.async(fn() ->
+      MockProcess.do_action()
+    end)
+    :timer.sleep(10)
+    {:ok, agent_pid} = Task.yield(task)
     assert Agent.get(agent_pid, fn(state) -> state end) == "my intercepted data"
     assert expectation |> was_called() == once()
   end
