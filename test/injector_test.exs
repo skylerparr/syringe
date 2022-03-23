@@ -48,7 +48,7 @@ defmodule InjectorTest do
   end
 
   test "resolve alias correctly" do
-    assert InjectorSample.three == "4"
+    assert InjectorSample.three() == "4"
   end
 end
 

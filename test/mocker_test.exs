@@ -106,10 +106,9 @@ defmodule Foo do
       |> MockBar.with_args(nil, nil)
   end
 
-  def struct(struct) do
+  def struct(_struct) do
     %Mocker.MockedStruct{name: "foo", address: "bar"}
     |> MockedStruct.get_data
-#    MockedStruct.get_data(struct)
   end
 
   def call_delegate() do
@@ -546,6 +545,18 @@ defmodule MockerTest do
     Foo.gone("a", 100, %{})
     Foo.gone("a", 100, %{})
     refute outcome |> was_called() |> between(3..4) |> times()
+  end
+
+  test "should fail if the intercept api doesn't match the true api" do
+    mock(MockBar)
+    try do
+      intercept(MockBar, :with_args, [any(), any()], with: :original_function)
+    rescue
+      _ in ExUnit.AssertionError ->
+        flunk("Should fail intercept")
+      _ ->
+        assert true
+    end
   end
 end
 

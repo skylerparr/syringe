@@ -23,15 +23,15 @@ defmodule Sample do
   inject MyService.Mock.Cool.Face.McBabar, as: BBar
 
   def call_bar do
-    MockingBar.bar
+    MockingBar.bar()
   end
 
   def third_bar do
-    BBar.bar
+    BBar.bar()
   end
 
   def four do
-    Four.bar
+    Four.four()
   end
 end
 
@@ -40,20 +40,20 @@ defmodule MockInjectingStrategyTest do
   doctest Injector
 
   test "injects implementation" do
-    assert Sample.call_bar == "bar"
+    assert Sample.call_bar() == "bar"
   end
 
   test "injects with alias" do
-    assert Sample.third_bar == "bar"
+    assert Sample.third_bar() == "bar"
   end
 
   test "should create new module" do
-    assert Injector.MockingBar.bar == "bar"
-    assert Injector.MyService.Mock.Cool.Face.McBabar.bar == "bar"
+    assert Injector.MockingBar.bar() == "bar"
+    assert Injector.MyService.Mock.Cool.Face.McBabar.bar() == "bar"
   end
 
   test "resolve alias correctly" do
-    assert InjectorSample.three == "4"
+    assert Sample.four() == "4"
   end
 end
 
