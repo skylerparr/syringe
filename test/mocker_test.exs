@@ -615,4 +615,30 @@ defmodule MockerTest do
     assert was_called(MockBar, :with_args, ["a", 100, any()]) == twice()
     assert was_called(MockBar, :with_args, ["a", 200, any()]) == never()
   end
+
+  test "should raise error if raise if specified" do
+    mock(MockBar)
+    intercept(MockBar, :with_args, ["a", 100, any()], raises: MyError)
+    try do
+      Foo.gone("a", 100, %{})
+      flunk("should raise error")
+    rescue
+      _ in MyError ->
+        assert true
+      _ -> flunk("Should raise MyError error")
+    end
+  end
+
+  test "should raise error if raise with message if specified" do
+    mock(MockBar)
+    intercept(MockBar, :with_args, ["a", 100, any()], raises: MyError, message: "foo")
+    try do
+      Foo.gone("a", 100, %{})
+      flunk("should raise error")
+    rescue
+      e in MyError ->
+        assert e.message == "foo"
+      _ -> flunk("Should raise MyError error")
+    end
+  end
 end

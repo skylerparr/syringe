@@ -71,15 +71,20 @@ defmodule Mocker do
   end
 
   def intercept(module, func, args, returns: value) do
-    anon_args = Macro.generate_arguments(length(args), __MODULE__)
     {:ok, ast_value} = Macro.to_string(value) |> Code.string_to_quoted()
-    fn_ast =
-      quote do
-        fn unquote_splicing(anon_args) ->
-          unquote(ast_value)
-        end
-      end
-    {handler_func, _} = Code.eval_quoted(fn_ast)
+    handler_func = create_handler_function(args, ast_value)
+    intercept(module, func, args, with: handler_func)
+  end
+
+  def intercept(module, func, args, raises: error) do
+    {:ok, ast_value} = Code.string_to_quoted("raise #{error}")
+    handler_func = create_handler_function(args, ast_value)
+    intercept(module, func, args, with: handler_func)
+  end
+
+  def intercept(module, func, args, raises: error, message: message) do
+    {:ok, ast_value} = Code.string_to_quoted("raise #{error}, \"#{message}\"")
+    handler_func = create_handler_function(args, ast_value)
     intercept(module, func, args, with: handler_func)
   end
 
@@ -98,6 +103,18 @@ defmodule Mocker do
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, map_pid, module})
     GenServer.call(module_pid, {:set_interceptor, func, args, intercept_func})
     {orig_module, func, args}
+  end
+
+  defp create_handler_function(args, ast_value) do
+    anon_args = Macro.generate_arguments(length(args), __MODULE__)
+    fn_ast =
+      quote do
+        fn unquote_splicing(anon_args) ->
+          unquote(ast_value)
+        end
+      end
+    {handler_func, _} = Code.eval_quoted(fn_ast)
+    handler_func
   end
 
   defp function_exists?(module, func, args) do
