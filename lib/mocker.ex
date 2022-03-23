@@ -68,12 +68,29 @@ defmodule Mocker do
   end
 
   def intercept(module, func, args, [with: intercept_func]) do
+    args = args || []
     orig_module = module
     map_pid = MockPidMapServer.get(self())
+    unless function_exists?(module, func, args) do
+      raise MockerApiError, message: "Attempting to mock #{module}.#{func} with arg count: #{length(args)}. Not function matching that criteria found"
+    end
     module = get_injector_module(module)
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, map_pid, module})
     GenServer.call(module_pid, {:set_interceptor, func, args, intercept_func})
     {orig_module, func, args}
+  end
+
+  defp function_exists?(module, func, args) do
+    arg_count = length(args)
+    module
+    |> exported_functions()
+    |> Enum.find(fn({fun, arity}) ->
+      fun == func && arity == arg_count
+    end)
+    |> case do
+      nil -> false
+      _ -> true
+       end
   end
 
   defp get_injector_module(module) do
@@ -180,6 +197,13 @@ defmodule Mocker do
     end
 
     nil
+  end
+
+  defp exported_functions(module) do
+    module.module_info
+    |> Keyword.get(:exports)
+    |> Keyword.delete(:__info__)
+    |> Keyword.delete(:module_info)
   end
 
   def never, do: :never  

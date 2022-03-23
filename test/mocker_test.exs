@@ -6,6 +6,14 @@ defmodule MockBar do
   def with_args(a, b, c) do
     {a,b,c}
   end
+
+  def with_args(a) do
+    a
+  end
+
+  def with_optional_args(a, b \\ 0) do
+    {a, b}
+  end
 end
 
 defmodule MockBaz do
@@ -551,10 +559,26 @@ defmodule MockerTest do
     mock(MockBar)
     try do
       intercept(MockBar, :with_args, [any(), any()], with: :original_function)
+      flunk("Should fail intercept")
     rescue
       _ in ExUnit.AssertionError ->
         flunk("Should fail intercept")
-      _ ->
+      _ in MockerApiError ->
+        assert true
+    end
+  end
+
+  test "should fail if the intercept api doesn't match the true api that has optional args" do
+    mock(MockBar)
+    try do
+      intercept(MockBar, :with_optional_args, [any()], with: :original_function)
+      intercept(MockBar, :with_optional_args, [any(), any()], with: :original_function)
+      intercept(MockBar, :with_optional_args, [any(), any(), any()], with: :original_function)
+      flunk("Should fail intercept")
+    rescue
+      _ in ExUnit.AssertionError ->
+        flunk("Should fail intercept")
+      _ in MockerApiError ->
         assert true
     end
   end
