@@ -210,6 +210,10 @@ defmodule MyError do
   defexception [:message]
 end
 
+defmodule MyErrorWithMessages do
+  defexception [:message, :message2]
+end
+
 defmodule MockerTest do
   use ExUnit.Case, async: true
   doctest Mocker
@@ -631,14 +635,26 @@ defmodule MockerTest do
 
   test "should raise error if raise with message if specified" do
     mock(MockBar)
-    intercept(MockBar, :with_args, ["a", 100, any()], raises: MyError, message: "foo")
+    intercept(MockBar, :with_args, ["a", 100, any()], raises: MyErrorWithMessages, message: "foo", message2: "bar")
     try do
       Foo.gone("a", 100, %{})
       flunk("should raise error")
     rescue
-      e in MyError ->
+      e in MyErrorWithMessages ->
         assert e.message == "foo"
-      _ -> flunk("Should raise MyError error")
+        assert e.message2 == "bar"
+      _ -> flunk("Should raise MyErrorWithMessages error")
+    end
+  end
+
+  test "should raise error if passing nonsense keywords" do
+    mock(MockBar)
+    try do
+      intercept(MockBar, :with_args, ["a", 100, any()], message: "foo", message2: "bar")
+      flunk("should raise error")
+    rescue
+      _ in KeyError ->
+        assert true
     end
   end
 end

@@ -291,6 +291,58 @@ assert outcome |> was_called() |> less_than(3) |> times()
 assert outcome |> was_called() |> between(3..4) |> times()
 ``` 
 
+## New in version 1.4
+
+Added a check at test run time to verify if the intercept api arity matches 
+the true arity of the function. If the intercept argument count does not match
+any of the functions of the same name but doesn't match the arity count, then
+an error will be raised. Here's an example:
+
+```elixir
+defmodule MockBar do
+  def with_args(a, b) do
+    ...
+  end
+end
+# the set up is the same
+mock(MockBar)
+# Raises MockerApiError, the with_args function has an arity of 2, but the intercept
+# is mocking an arity of 3. This allows a developer to change the arity of a function
+# and the mocker will let them know that the intercepts need to be updated as well
+outcome = intercept(MockBar, :with_args, [any(), any(), any()], with: fn(_, _, _) -> :ok end)
+``` 
+
+Also added some convenience options for the intercept function to simplify your mocking.
+You can now just tell the intercept to return a value without specifying a function or
+specifying an error to raise. Here's some examples:
+
+```elixir
+# the set up is the same
+mock(MockBar)
+# will return foo if args match
+intercept(MockBar, :with_args, [any(), any()], returns: "foo")
+``` 
+For raising errors
+```elixir
+defmodule SomeError do
+  defexception [:message]
+end
+
+mock(MockBar)
+# will raise if matches args
+intercept(MockBar, :with_args, [any(), any()], raises: SomeError)
+```
+or if you want to set a specific messages to the error
+```elixir
+defmodule SomeError do
+  defexception [:message, :more_detail]
+end
+
+mock(MockBar)
+# will raise if matches args and assign the message to the :message field in the error
+intercept(MockBar, :with_args, [any(), any()], raises: SomeError, message: "My special message", more_detail: "rtfm")
+```
+
 ## Gotcha's/Limitations
 
 Due to the way that syringe handles the inject as an alias, if you refer

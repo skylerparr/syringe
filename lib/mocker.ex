@@ -82,12 +82,6 @@ defmodule Mocker do
     intercept(module, func, args, with: handler_func)
   end
 
-  def intercept(module, func, args, raises: error, message: message) do
-    {:ok, ast_value} = Code.string_to_quoted("raise #{error}, \"#{message}\"")
-    handler_func = create_handler_function(args, ast_value)
-    intercept(module, func, args, with: handler_func)
-  end
-
   def intercept(module, func, args, with: intercept_func) do
     args = args || []
     orig_module = module
@@ -103,6 +97,18 @@ defmodule Mocker do
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, map_pid, module})
     GenServer.call(module_pid, {:set_interceptor, func, args, intercept_func})
     {orig_module, func, args}
+  end
+
+  def intercept(module, func, args, messages) do
+    error = Keyword.fetch!(messages, :raises)
+    messages = Keyword.delete(messages, :raises)
+    messages_list = Enum.into(messages, [], fn({key, value}) ->
+      "#{Atom.to_string(key)}: \"#{value}\""
+    end)
+    messages_string = messages_list |> Enum.join(", ")
+    {:ok, ast_value} = Code.string_to_quoted("raise #{error}, #{messages_string}")
+    handler_func = create_handler_function(args, ast_value)
+    intercept(module, func, args, with: handler_func)
   end
 
   defp create_handler_function(args, ast_value) do
