@@ -26,7 +26,7 @@ defmodule AutoMocker do
       real_function = quote do unquote(real_module).unquote(fun)() end
       real_function = real_function |> put_elem(2, var_args)
       #init and start_mock_link should not be mocked
-      if(fun != :start_mock_link && fun != :init ) do
+      if(fun != :start_mock_link && fun != :init && !macro?(fun)) do
         quote do
           def unquote({fun, [], args}) do
             mock_func(__MODULE__, unquote(fun), unquote(var_args), fn ->
@@ -36,6 +36,12 @@ defmodule AutoMocker do
         end 
       end
     end)
+  end
+
+  # prevent macro functions from being mocked, it fixes some compiler warnings too
+  defp macro?(fun) do
+    Atom.to_string(fun)
+    |> String.starts_with?("MACRO-")
   end
 
   defp generate_var_args(0), do: []

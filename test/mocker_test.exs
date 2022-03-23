@@ -30,7 +30,7 @@ defmodule Mocker.MockedStruct do
 
   def get_data(struct) do
     struct
-  end 
+  end
 
 end
 
