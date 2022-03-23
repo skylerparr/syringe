@@ -18,20 +18,20 @@ end
 
 defmodule AliasSample do
   use Injector
-  inject AliasBar
-  inject One.Two.Three.Four.Five
-  inject MyService.Alias.Cool.Face.McBabar, as: BBar
+  inject(AliasBar)
+  inject(One.Two.Three.Four.Five)
+  inject(MyService.Alias.Cool.Face.McBabar, as: BBar)
 
   def call_bar do
-    AliasBar.bar
+    AliasBar.bar()
   end
 
   def third_bar do
-    BBar.bar
+    BBar.bar()
   end
 
   def four do
-    Five.four
+    Five.four()
   end
 end
 
@@ -41,22 +41,23 @@ defmodule AliasInjectingStrategyTest do
 
   setup do
     Mix.env(:dev)
-    on_exit fn -> 
+
+    on_exit(fn ->
       Mix.env(:test)
-    end
+    end)
+
     :ok
   end
 
   test "injects implementation" do
-    assert AliasSample.call_bar == "bar"
+    assert AliasSample.call_bar() == "bar"
   end
 
   test "injects with alias" do
-    assert AliasSample.third_bar == "bar"
+    assert AliasSample.third_bar() == "bar"
   end
 
   test "inject correct alias" do
-    assert AliasSample.four == "4"
+    assert AliasSample.four() == "4"
   end
 end
-

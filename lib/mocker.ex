@@ -6,15 +6,17 @@ defmodule Mocker do
     MockerOptions.start_link()
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
-  
+
   def init(init_arg) do
     {:ok, init_arg}
   end
 
   def mock(module), do: mock(module, self(), no_auto_mock: false)
+
   def mock(module, no_auto_mock: true) do
     mock(module, self(), no_auto_mock: true)
   end
+
   def mock(module, pid, opts \\ nil) do
     MockPidMapServer.map(self(), pid)
     map_pid = MockPidMapServer.get(self())
@@ -25,6 +27,7 @@ defmodule Mocker do
   end
 
   def was_called({module, func, args}), do: was_called(module, func, args)
+
   def was_called(module, func, args \\ []) do
     map_pid = MockPidMapServer.get(self())
     module = get_injector_module(module)
@@ -35,22 +38,22 @@ defmodule Mocker do
 
   def at_least(actual_count, expected_count) do
     actual_count = get_count(actual_count)
-    {:at_least, (actual_count >= expected_count)}
+    {:at_least, actual_count >= expected_count}
   end
 
   def more_than(actual_count, expected_count) do
     actual_count = get_count(actual_count)
-    {:more_than, (actual_count > expected_count)}
+    {:more_than, actual_count > expected_count}
   end
 
   def at_most(actual_count, expect_count) do
     actual_count = get_count(actual_count)
-    {:at_most, (actual_count <= expect_count)}
+    {:at_most, actual_count <= expect_count}
   end
 
   def less_than(actual_count, expect_count) do
     actual_count = get_count(actual_count)
-    {:less_than, (actual_count < expect_count)}
+    {:less_than, actual_count < expect_count}
   end
 
   def between(actual_count, range) do
@@ -63,17 +66,21 @@ defmodule Mocker do
       :never -> 0
       :once -> 1
       :twice -> 2
-      _ -> count_atom |> Atom.to_string() |> String.split(" ") |> hd |> String.to_integer
+      _ -> count_atom |> Atom.to_string() |> String.split(" ") |> hd |> String.to_integer()
     end
   end
 
-  def intercept(module, func, args, [with: intercept_func]) do
+  def intercept(module, func, args, with: intercept_func) do
     args = args || []
     orig_module = module
     map_pid = MockPidMapServer.get(self())
+
     unless function_exists?(module, func, args) do
-      raise MockerApiError, message: "Attempting to mock #{module}.#{func} with arg count: #{length(args)}. Not function matching that criteria found"
+      raise MockerApiError,
+        message:
+          "Attempting to mock #{module}.#{func} with arg count: #{length(args)}. Not function matching that criteria found"
     end
+
     module = get_injector_module(module)
     module_pid = GenServer.call(__MODULE__, {:get_module_pid, map_pid, module})
     GenServer.call(module_pid, {:set_interceptor, func, args, intercept_func})
@@ -82,27 +89,29 @@ defmodule Mocker do
 
   defp function_exists?(module, func, args) do
     arg_count = length(args)
+
     module
     |> exported_functions()
-    |> Enum.find(fn({fun, arity}) ->
+    |> Enum.find(fn {fun, arity} ->
       fun == func && arity == arg_count
     end)
     |> case do
       nil -> false
       _ -> true
-       end
+    end
   end
 
   defp get_injector_module(module) do
-    module = module 
-    |> Atom.to_string 
-    |> String.split(".")
-    |> tl 
-    |> Enum.join(".")
+    module =
+      module
+      |> Atom.to_string()
+      |> String.split(".")
+      |> tl
+      |> Enum.join(".")
 
-    "Injector." <> module 
-    |> String.to_atom
-    |> Injector.as_elixir_module
+    ("Injector." <> module)
+    |> String.to_atom()
+    |> Injector.as_elixir_module()
   end
 
   def handle_call({:get_module_pid, test_pid, module}, _from, state) do
@@ -111,67 +120,92 @@ defmodule Mocker do
   end
 
   def handle_call({:map_to_pid, test_pid, module_pid, module}, _from, state) do
-    module_map = Map.get(state, test_pid, %{})
-    |> Map.put(module, module_pid)
-    state = Map.put(state, test_pid, module_map) 
+    module_map =
+      Map.get(state, test_pid, %{})
+      |> Map.put(module, module_pid)
+
+    state = Map.put(state, test_pid, module_map)
     {:reply, state, state}
   end
-  
+
   def handle_call({:get_interceptor, module, func, args, test_pid}, from, state) do
     module_pid = get_module_pid(state, module, test_pid)
-    interceptor = cond do
-      is_atom(test_pid) -> :original_function
-      module_pid == nil -> find_ancestor_interceptor(module, func, args, from, state, test_pid)
-      module_pid == nil && is_pid(test_pid) -> :original_function
-      true -> GenServer.call(module_pid, {:get_interceptor, func, args}, 60000)
-    end
+
+    interceptor =
+      cond do
+        is_atom(test_pid) -> :original_function
+        module_pid == nil -> find_ancestor_interceptor(module, func, args, from, state, test_pid)
+        module_pid == nil && is_pid(test_pid) -> :original_function
+        true -> GenServer.call(module_pid, {:get_interceptor, func, args}, 60000)
+      end
+
     {:reply, interceptor, state}
   end
 
   def handle_call({module, func, args, test_pid}, _from, state) do
     module_pid = get_module_pid(state, module, test_pid)
+
     if(module_pid != nil) do
-      GenServer.call(module_pid, {:increment_call_count, func, args}) 
+      GenServer.call(module_pid, {:increment_call_count, func, args})
     end
+
     {:reply, state, state}
   end
 
   defp find_ancestor_interceptor(module, func, args, from, state, test_pid) do
     pid_info = Process.info(test_pid) || [dictionary: []]
-    case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
-      nil -> :original_function
+
+    case pid_info |> Keyword.get(:dictionary, "$ancestors": []) |> Keyword.get(:"$ancestors") do
+      nil ->
+        :original_function
+
       ancestor_pids ->
         ancestor_pid = List.last(ancestor_pids)
-                       {:reply, interceptor, _state} = handle_call({:get_interceptor, module, func, args, ancestor_pid}, from, state)
-                       interceptor || :original_function
+
+        {:reply, interceptor, _state} =
+          handle_call({:get_interceptor, module, func, args, ancestor_pid}, from, state)
+
+        interceptor || :original_function
     end
   end
 
   defp get_module_pid(state, module, test_pid) do
-    module_pid = Map.get(state, test_pid, %{})
-    |> Map.get(module)
+    module_pid =
+      Map.get(state, test_pid, %{})
+      |> Map.get(module)
 
-    test_pid = case(test_pid |> is_atom()) do
-      true -> Process.whereis(test_pid)
-      false -> test_pid
-    end
+    test_pid =
+      case(test_pid |> is_atom()) do
+        true -> Process.whereis(test_pid)
+        false -> test_pid
+      end
 
     if(test_pid) do
       case module_pid do
-        nil -> pid_info = Process.info(test_pid) || [dictionary: []]
-               case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
-                 nil -> check_linked_pids(state, module, test_pid)
-                 ancestor_pids -> ancestor_pid = List.last(ancestor_pids)
-                                  if(ancestor_pid == test_pid) do
-                                    ancestor_pid
-                                  else
-                                    case ancestor_pid do
-                                      nil -> nil
-                                      ancestor_pid -> get_module_pid(state, module, ancestor_pid)
-                                    end
-                                  end
-               end
-        module_pid -> module_pid
+        nil ->
+          pid_info = Process.info(test_pid) || [dictionary: []]
+
+          case pid_info
+               |> Keyword.get(:dictionary, "$ancestors": [])
+               |> Keyword.get(:"$ancestors") do
+            nil ->
+              check_linked_pids(state, module, test_pid)
+
+            ancestor_pids ->
+              ancestor_pid = List.last(ancestor_pids)
+
+              if(ancestor_pid == test_pid) do
+                ancestor_pid
+              else
+                case ancestor_pid do
+                  nil -> nil
+                  ancestor_pid -> get_module_pid(state, module, ancestor_pid)
+                end
+              end
+          end
+
+        module_pid ->
+          module_pid
       end
     else
       nil
@@ -179,21 +213,31 @@ defmodule Mocker do
   end
 
   defp check_linked_pids(state, module, test_pid) do
-    case (Process.info(test_pid)[:links] || []) |> List.first do
-      nil -> nil
-      pid -> pid_info = Process.info(pid) || [dictionary: []]
-             case pid_info |> Keyword.get(:dictionary, ["$ancestors": []]) |> Keyword.get(:"$ancestors") do
-               nil -> nil
-               ancestor_pids -> ancestor_pid = List.last(ancestor_pids)
-                                if(ancestor_pid == test_pid) do
-                                  ancestor_pid
-                                else
-                                  case ancestor_pid do
-                                    nil -> nil
-                                    ancestor_pid -> get_module_pid(state, module, ancestor_pid)
-                                  end
-                                end
-             end
+    case (Process.info(test_pid)[:links] || []) |> List.first() do
+      nil ->
+        nil
+
+      pid ->
+        pid_info = Process.info(pid) || [dictionary: []]
+
+        case pid_info
+             |> Keyword.get(:dictionary, "$ancestors": [])
+             |> Keyword.get(:"$ancestors") do
+          nil ->
+            nil
+
+          ancestor_pids ->
+            ancestor_pid = List.last(ancestor_pids)
+
+            if(ancestor_pid == test_pid) do
+              ancestor_pid
+            else
+              case ancestor_pid do
+                nil -> nil
+                ancestor_pid -> get_module_pid(state, module, ancestor_pid)
+              end
+            end
+        end
     end
 
     nil
@@ -206,7 +250,7 @@ defmodule Mocker do
     |> Keyword.delete(:module_info)
   end
 
-  def never, do: :never  
+  def never, do: :never
   def once, do: :once
   def twice, do: :twice
   def times(0), do: never()
@@ -217,11 +261,10 @@ defmodule Mocker do
   def times({:at_most, status}), do: status
   def times({:less_than, status}), do: status
   def times({:between, status}), do: status
+
   def times(num) do
-    "#{num} times" |> String.to_atom
+    "#{num} times" |> String.to_atom()
   end
 
   def any, do: :any
 end
-
-

@@ -18,20 +18,20 @@ end
 
 defmodule InjectorSample do
   use Injector
-  inject InjectorBar
-  inject MyService.Injector.Cool.Face.McBabar, as: BBar
-  inject One.Two.Three
+  inject(InjectorBar)
+  inject(MyService.Injector.Cool.Face.McBabar, as: BBar)
+  inject(One.Two.Three)
 
   def call_bar do
-    InjectorBar.bar
+    InjectorBar.bar()
   end
 
   def third_bar do
-    BBar.bar
+    BBar.bar()
   end
 
   def three do
-    Three.four
+    Three.four()
   end
 end
 
@@ -40,15 +40,14 @@ defmodule InjectorTest do
   doctest Injector
 
   test "injects implementation" do
-    assert InjectorSample.call_bar == "bar"
+    assert InjectorSample.call_bar() == "bar"
   end
 
   test "injects with alias" do
-    assert InjectorSample.third_bar == "bar"
+    assert InjectorSample.third_bar() == "bar"
   end
 
   test "resolve alias correctly" do
     assert InjectorSample.three() == "4"
   end
 end
-

@@ -4,7 +4,7 @@ defmodule MockBar do
   end
 
   def with_args(a, b, c) do
-    {a,b,c}
+    {a, b, c}
   end
 
   def with_args(a) do
@@ -33,13 +33,11 @@ defmodule MockBaz do
 end
 
 defmodule Mocker.MockedStruct do
-
   defstruct name: nil, address: nil
 
   def get_data(struct) do
     struct
   end
-
 end
 
 defmodule MockDelegate do
@@ -54,13 +52,14 @@ end
 
 defmodule MockTasks do
   use Injector
-  inject Task
+  inject(Task)
 
   def run_tasks() do
-    task2 = Task.async(fn() ->
-      Task.async(__MODULE__, :run, ["foo"])
-      "bar"
-    end)
+    task2 =
+      Task.async(fn ->
+        Task.async(__MODULE__, :run, ["foo"])
+        "bar"
+      end)
 
     task2
   end
@@ -72,37 +71,39 @@ end
 
 defmodule MockProcess do
   use Injector
-  inject MockBaz
+  inject(MockBaz)
 
   def do_action() do
-    {:ok, pid} = Agent.start(fn() -> nil end)
-    Task.start(fn() ->
-      Task.start_link(fn() ->
+    {:ok, pid} = Agent.start(fn -> nil end)
+
+    Task.start(fn ->
+      Task.start_link(fn ->
         Task.async(__MODULE__, :exec, [pid])
       end)
     end)
+
     pid
   end
 
   def exec(pid) do
-    Agent.update(pid, fn(_) -> MockBaz.cat() end)
+    Agent.update(pid, fn _ -> MockBaz.cat() end)
   end
 end
 
 defmodule Foo do
   use Injector
-  inject MockBar
-  inject MockBaz
-  inject MockWorker
-  inject Mocker.MockedStruct
-  inject MockDelegate
+  inject(MockBar)
+  inject(MockBaz)
+  inject(MockWorker)
+  inject(Mocker.MockedStruct)
+  inject(MockDelegate)
 
   def go do
-    MockBar.bar
+    MockBar.bar()
   end
 
   def going do
-    MockBaz.cat
+    MockBaz.cat()
   end
 
   def gone(a, b, c) do
@@ -110,13 +111,13 @@ defmodule Foo do
   end
 
   def pipe do
-    MockBaz.cat
-      |> MockBar.with_args(nil, nil)
+    MockBaz.cat()
+    |> MockBar.with_args(nil, nil)
   end
 
   def struct(_struct) do
     %Mocker.MockedStruct{name: "foo", address: "bar"}
-    |> MockedStruct.get_data
+    |> MockedStruct.get_data()
   end
 
   def call_delegate() do
@@ -132,7 +133,7 @@ defmodule Server do
   use GenServer
   use Injector
 
-  inject Foo
+  inject(Foo)
 
   def start_link do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -147,7 +148,7 @@ defmodule Server do
   end
 
   def handle_call(:call_foo, _from, state) do
-    Foo.go
+    Foo.go()
     {:reply, state, state}
   end
 end
@@ -170,7 +171,7 @@ end
 
 defmodule UseProtocol do
   use Injector
-  inject MyProto
+  inject(MyProto)
 
   def do_things(data) do
     MyProto.handle_work(data)
@@ -181,9 +182,9 @@ defmodule MyGenServer do
   use Injector
   use GenServer
 
-  inject Application
-  inject MockBar
-  inject Task
+  inject(Application)
+  inject(MockBar)
+  inject(Task)
 
   def start_link() do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
@@ -211,20 +212,20 @@ defmodule MockerTest do
   import Mocker
 
   test "should call origin function if not mocked" do
-    assert Foo.go == "Actual impl"
+    assert Foo.go() == "Actual impl"
   end
 
   test "should validate that Bar was called" do
     mock(MockBar)
-    Foo.go
+    Foo.go()
     assert was_called(MockBar, :bar) == once()
   end
 
   test "should validate that Bar was called multiple times" do
     mock(MockBar)
-    Foo.go
-    Foo.go
-    Foo.go
+    Foo.go()
+    Foo.go()
+    Foo.go()
     assert was_called(MockBar, :bar) == times(3)
   end
 
@@ -236,9 +237,9 @@ defmodule MockerTest do
   test "should validate multiple mocked modules" do
     mock(MockBar)
     mock(MockBaz)
-    Foo.go
-    Foo.going
-    Foo.go
+    Foo.go()
+    Foo.going()
+    Foo.go()
 
     assert was_called(MockBar, :bar) == twice()
     assert was_called(MockBaz, :cat) == once()
@@ -246,15 +247,15 @@ defmodule MockerTest do
 
   test "should intercept function" do
     mock(MockBar)
-    assert Foo.go == nil
+    assert Foo.go() == nil
     intercept(MockBar, :bar, nil, with: fn -> "intercepted" end)
-    assert Foo.go == "intercepted"
+    assert Foo.go() == "intercepted"
   end
 
   test "should call original function only if instructed to do so" do
     mock(MockBar)
     intercept(MockBar, :bar, nil, with: :original_function)
-    assert Foo.go == "Actual impl"
+    assert Foo.go() == "Actual impl"
   end
 
   test "should call intercept functions in order" do
@@ -264,12 +265,12 @@ defmodule MockerTest do
     intercept(MockBar, :bar, nil, with: fn -> "intercepted a third time" end)
     intercept(MockBar, :bar, nil, with: fn -> "gets called from now on" end)
 
-    assert Foo.go == "intercepted"
-    assert Foo.go == "intercepted again"
-    assert Foo.go == "intercepted a third time"
-    assert Foo.go == "gets called from now on"
-    assert Foo.go == "gets called from now on"
-    assert Foo.go == "gets called from now on"
+    assert Foo.go() == "intercepted"
+    assert Foo.go() == "intercepted again"
+    assert Foo.go() == "intercepted a third time"
+    assert Foo.go() == "gets called from now on"
+    assert Foo.go() == "gets called from now on"
+    assert Foo.go() == "gets called from now on"
   end
 
   test "should intercept multiple modules" do
@@ -277,8 +278,8 @@ defmodule MockerTest do
     mock(MockBaz)
     intercept(MockBar, :bar, nil, with: fn -> "intercepted" end)
     intercept(MockBaz, :cat, nil, with: fn -> "intercepted cat" end)
-    assert Foo.go == "intercepted"
-    assert Foo.going == "intercepted cat"
+    assert Foo.go() == "intercepted"
+    assert Foo.going() == "intercepted cat"
   end
 
   test "should allow original function in intercepted functions" do
@@ -288,11 +289,11 @@ defmodule MockerTest do
     intercept(MockBar, :bar, nil, with: :original_function)
     intercept(MockBar, :bar, nil, with: fn -> "gets called from now on" end)
 
-    assert Foo.go == "intercepted"
-    assert Foo.go == "intercepted again"
-    assert Foo.go == "Actual impl"
-    assert Foo.go == "gets called from now on"
-    assert Foo.go == "gets called from now on"
+    assert Foo.go() == "intercepted"
+    assert Foo.go() == "intercepted again"
+    assert Foo.go() == "Actual impl"
+    assert Foo.go() == "gets called from now on"
+    assert Foo.go() == "gets called from now on"
   end
 
   test "should assert was called with specific arguments" do
@@ -308,7 +309,7 @@ defmodule MockerTest do
   test "should intercept with specific function arguments" do
     mock(MockBar)
     intercept(MockBar, :with_args, ["a", {:b}, %{c: 1}], with: :original_function)
-    intercept(MockBar, :with_args, ["b", {:c}, %{d: 1}], with: fn(_,_,_) -> {"foo"} end)
+    intercept(MockBar, :with_args, ["b", {:c}, %{d: 1}], with: fn _, _, _ -> {"foo"} end)
     assert Foo.gone("a", {:b}, %{c: 1}) == {"a", {:b}, %{c: 1}}
     assert Foo.gone("b", {:c}, %{d: 1}) == {"foo"}
     assert Foo.gone("", "", "") == nil
@@ -318,9 +319,13 @@ defmodule MockerTest do
   test "should mock multiple functions and have them work together" do
     mock(MockBar)
     mock(MockBaz)
-    intercept(MockBaz, :cat, nil, with: fn() -> "I'm a flying cat!" end)
-    intercept(MockBar, :with_args, ["I'm a flying cat!", nil, nil], with: fn(a, _, _) -> "#{a} So am I" end)
-    assert Foo.pipe == "I'm a flying cat! So am I"
+    intercept(MockBaz, :cat, nil, with: fn -> "I'm a flying cat!" end)
+
+    intercept(MockBar, :with_args, ["I'm a flying cat!", nil, nil],
+      with: fn a, _, _ -> "#{a} So am I" end
+    )
+
+    assert Foo.pipe() == "I'm a flying cat! So am I"
   end
 
   test "should match with any" do
@@ -333,17 +338,17 @@ defmodule MockerTest do
   end
 
   test "should call mocked function inside another process" do
-    {:ok, pid} = Server.start_link
+    {:ok, pid} = Server.start_link()
     mock(Foo, pid)
-    intercept(Foo, :go, nil, with: fn() -> :ok end)
-    Server.call_foo
+    intercept(Foo, :go, nil, with: fn -> :ok end)
+    Server.call_foo()
     assert was_called(Foo, :go, nil) == once()
   end
 
   test "should not mock structs" do
     mock(Mocker.MockedStruct)
     struct = %Mocker.MockedStruct{name: "foo", address: "bar"}
-    intercept(Mocker.MockedStruct, :get_data, [any()], with: fn(_) -> "things" end)
+    intercept(Mocker.MockedStruct, :get_data, [any()], with: fn _ -> "things" end)
 
     assert Foo.struct(struct) == "things"
     assert was_called(Mocker.MockedStruct, :get_data, [struct]) == once()
@@ -352,7 +357,7 @@ defmodule MockerTest do
   test "should mock protocols" do
     data = %{foo: "bar"}
     mock(MyProto)
-    intercept(MyProto, :handle_work, [data], with: fn(_) -> "mock proto data" end)
+    intercept(MyProto, :handle_work, [data], with: fn _ -> "mock proto data" end)
     intercept(MyProto, :handle_work, [[]], with: :original_function)
 
     assert UseProtocol.do_things(data) == "mock proto data"
@@ -378,14 +383,21 @@ defmodule MockerTest do
   test "should handle intercepting functions with different arity" do
     mock(Task)
 
-    expect1 = intercept(Task, :async, [any()], with: fn(fun) ->
-      result = fun.()
-      assert result == "bar"
-    end)
-    expect2 = intercept(Task, :async, [MockTasks, :run, any()], with: fn(mod, fun, args) ->
-      result = apply(mod, fun, args)
-      assert result == "foo"
-    end)
+    expect1 =
+      intercept(Task, :async, [any()],
+        with: fn fun ->
+          result = fun.()
+          assert result == "bar"
+        end
+      )
+
+    expect2 =
+      intercept(Task, :async, [MockTasks, :run, any()],
+        with: fn mod, fun, args ->
+          result = apply(mod, fun, args)
+          assert result == "foo"
+        end
+      )
 
     MockTasks.run_tasks()
 
@@ -395,22 +407,25 @@ defmodule MockerTest do
 
   test "should mock with nested processes" do
     mock(MockBaz)
-    expectation = intercept(MockBaz, :cat, [], with: fn() -> "my intercepted data" end)
+    expectation = intercept(MockBaz, :cat, [], with: fn -> "my intercepted data" end)
     agent_pid = MockProcess.do_action()
     :timer.sleep(10)
-    assert Agent.get(agent_pid, fn(state) -> state end) == "my intercepted data"
+    assert Agent.get(agent_pid, fn state -> state end) == "my intercepted data"
     assert expectation |> was_called() == once()
   end
 
   test "should mock inside test processes" do
     mock(MockBaz)
-    expectation = intercept(MockBaz, :cat, [], with: fn() -> "my intercepted data" end)
-    task = Task.async(fn() ->
-      MockProcess.do_action()
-    end)
+    expectation = intercept(MockBaz, :cat, [], with: fn -> "my intercepted data" end)
+
+    task =
+      Task.async(fn ->
+        MockProcess.do_action()
+      end)
+
     :timer.sleep(10)
     {:ok, agent_pid} = Task.yield(task)
-    assert Agent.get(agent_pid, fn(state) -> state end) == "my intercepted data"
+    assert Agent.get(agent_pid, fn state -> state end) == "my intercepted data"
     assert expectation |> was_called() == once()
   end
 
@@ -421,7 +436,7 @@ defmodule MockerTest do
   test "should mock nested process inside GenServer" do
     MyGenServer.start_link()
     mock(MockBar)
-    bar_call = intercept(MockBar, :bar, [], with: fn() -> "data" end)
+    bar_call = intercept(MockBar, :bar, [], with: fn -> "data" end)
     assert bar_call |> was_called() == once()
   end
 
@@ -435,7 +450,7 @@ defmodule MockerTest do
 
   test "should mock a function that has conditional compilation" do
     mock(MockBaz)
-    meow_call = intercept(MockBaz, :meow, [], with: fn() -> "mocked_meow" end)
+    meow_call = intercept(MockBaz, :meow, [], with: fn -> "mocked_meow" end)
     assert Foo.meow() == "mocked_meow"
     assert meow_call |> was_called() == once()
   end
@@ -557,12 +572,14 @@ defmodule MockerTest do
 
   test "should fail if the intercept api doesn't match the true api" do
     mock(MockBar)
+
     try do
       intercept(MockBar, :with_args, [any(), any()], with: :original_function)
       flunk("Should fail intercept")
     rescue
       _ in ExUnit.AssertionError ->
         flunk("Should fail intercept")
+
       _ in MockerApiError ->
         assert true
     end
@@ -570,6 +587,7 @@ defmodule MockerTest do
 
   test "should fail if the intercept api doesn't match the true api that has optional args" do
     mock(MockBar)
+
     try do
       intercept(MockBar, :with_optional_args, [any()], with: :original_function)
       intercept(MockBar, :with_optional_args, [any(), any()], with: :original_function)
@@ -578,10 +596,9 @@ defmodule MockerTest do
     rescue
       _ in ExUnit.AssertionError ->
         flunk("Should fail intercept")
+
       _ in MockerApiError ->
         assert true
     end
   end
 end
-
-

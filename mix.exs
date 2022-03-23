@@ -2,12 +2,14 @@ defmodule Injector.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :syringe,
-     version: "1.3.1",
-     elixir: "~> 1.2",
-     description: description(),
-     package: package(),
-     deps: deps()]
+    [
+      app: :syringe,
+      version: "1.3.1",
+      elixir: "~> 1.2",
+      description: description(),
+      package: package(),
+      deps: deps()
+    ]
   end
 
   # Configuration for the OTP application
@@ -28,7 +30,7 @@ defmodule Injector.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-    {:ex_doc, "~> 0.24", only: :dev}
+      {:ex_doc, "~> 0.24", only: :dev}
     ]
   end
 

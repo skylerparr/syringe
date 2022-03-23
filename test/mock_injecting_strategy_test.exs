@@ -18,9 +18,9 @@ end
 
 defmodule Sample do
   use Injector
-  inject MockingBar
-  inject One.Two.Three.Four
-  inject MyService.Mock.Cool.Face.McBabar, as: BBar
+  inject(MockingBar)
+  inject(One.Two.Three.Four)
+  inject(MyService.Mock.Cool.Face.McBabar, as: BBar)
 
   def call_bar do
     MockingBar.bar()
@@ -56,4 +56,3 @@ defmodule MockInjectingStrategyTest do
     assert Sample.four() == "4"
   end
 end
-

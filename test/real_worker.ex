@@ -1,5 +1,4 @@
 defmodule RealWorker do
-
   def collect_data do
     {:ok, %{id: 1}}
   end
@@ -13,6 +12,6 @@ defmodule RealWorker do
   end
 
   def collect_more_data(a, b, c) do
-    {a,b,c}
+    {a, b, c}
   end
 end
