@@ -206,6 +206,10 @@ defmodule MyGenServer do
   end
 end
 
+defmodule MyError do
+  defexception [:message]
+end
+
 defmodule MockerTest do
   use ExUnit.Case, async: true
   doctest Mocker
@@ -431,6 +435,7 @@ defmodule MockerTest do
 
   test "should mock GenServer with named server" do
     MyGenServer.start_link()
+    assert true
   end
 
   test "should mock nested process inside GenServer" do
@@ -600,5 +605,14 @@ defmodule MockerTest do
       _ in MockerApiError ->
         assert true
     end
+  end
+
+  test "should return value specified" do
+    mock(MockBar)
+    intercept(MockBar, :with_args, ["a", 100, any()], returns: {"x", 100, {}})
+    assert Foo.gone("a", 100, %{}) == {"x", 100, {}}
+    assert Foo.gone("a", 100, []) == {"x", 100, {}}
+    assert was_called(MockBar, :with_args, ["a", 100, any()]) == twice()
+    assert was_called(MockBar, :with_args, ["a", 200, any()]) == never()
   end
 end

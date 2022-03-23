@@ -70,6 +70,19 @@ defmodule Mocker do
     end
   end
 
+  def intercept(module, func, args, returns: value) do
+    anon_args = Macro.generate_arguments(length(args), __MODULE__)
+    {:ok, ast_value} = Macro.to_string(value) |> Code.string_to_quoted()
+    fn_ast =
+      quote do
+        fn unquote_splicing(anon_args) ->
+          unquote(ast_value)
+        end
+      end
+    {handler_func, _} = Code.eval_quoted(fn_ast)
+    intercept(module, func, args, with: handler_func)
+  end
+
   def intercept(module, func, args, with: intercept_func) do
     args = args || []
     orig_module = module
