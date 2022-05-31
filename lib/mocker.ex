@@ -71,8 +71,16 @@ defmodule Mocker do
   end
 
   def intercept(module, func, args, returns: value) do
+    value = :erlang.term_to_binary(value)
     {:ok, ast_value} = Macro.to_string(value) |> Code.string_to_quoted()
-    handler_func = create_handler_function(args, ast_value)
+    anon_args = Macro.generate_arguments(length(args), __MODULE__)
+    fn_ast =
+      quote do
+        fn unquote_splicing(anon_args) ->
+          unquote(ast_value) |> :erlang.binary_to_term()
+        end
+      end
+    {handler_func, _} = Code.eval_quoted(fn_ast)
     intercept(module, func, args, with: handler_func)
   end
 
