@@ -29,7 +29,7 @@ defmodule MockInjectingStrategy do
       |> Injector.as_elixir_module()
 
     try do
-      injector_module.module_info
+      injector_module.module_info()
 
       quote do
         alias unquote(injector_module), as: unquote(as_atom)

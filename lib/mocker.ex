@@ -102,9 +102,12 @@ defmodule Mocker do
   def intercept(module, func, args, messages) do
     error = Keyword.fetch!(messages, :raises)
     messages = Keyword.delete(messages, :raises)
-    messages_list = Enum.into(messages, [], fn({key, value}) ->
-      "#{Atom.to_string(key)}: \"#{value}\""
-    end)
+
+    messages_list =
+      Enum.into(messages, [], fn {key, value} ->
+        "#{Atom.to_string(key)}: \"#{value}\""
+      end)
+
     messages_string = messages_list |> Enum.join(", ")
     {:ok, ast_value} = Code.string_to_quoted("raise #{error}, #{messages_string}")
     handler_func = create_handler_function(args, ast_value)
@@ -113,12 +116,14 @@ defmodule Mocker do
 
   defp create_handler_function(args, ast_value) do
     anon_args = Macro.generate_arguments(length(args), __MODULE__)
+
     fn_ast =
       quote do
         fn unquote_splicing(anon_args) ->
           unquote(ast_value)
         end
       end
+
     {handler_func, _} = Code.eval_quoted(fn_ast)
     handler_func
   end
@@ -280,7 +285,7 @@ defmodule Mocker do
   end
 
   defp exported_functions(module) do
-    module.module_info
+    module.module_info()
     |> Keyword.get(:exports)
     |> Keyword.delete(:__info__)
     |> Keyword.delete(:module_info)

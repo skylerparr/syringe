@@ -623,19 +623,28 @@ defmodule MockerTest do
   test "should raise error if raise if specified" do
     mock(MockBar)
     intercept(MockBar, :with_args, ["a", 100, any()], raises: MyError)
+
     try do
       Foo.gone("a", 100, %{})
       flunk("should raise error")
     rescue
       _ in MyError ->
         assert true
-      _ -> flunk("Should raise MyError error")
+
+      _ ->
+        flunk("Should raise MyError error")
     end
   end
 
   test "should raise error if raise with message if specified" do
     mock(MockBar)
-    intercept(MockBar, :with_args, ["a", 100, any()], raises: MyErrorWithMessages, message: "foo", message2: "bar")
+
+    intercept(MockBar, :with_args, ["a", 100, any()],
+      raises: MyErrorWithMessages,
+      message: "foo",
+      message2: "bar"
+    )
+
     try do
       Foo.gone("a", 100, %{})
       flunk("should raise error")
@@ -643,12 +652,15 @@ defmodule MockerTest do
       e in MyErrorWithMessages ->
         assert e.message == "foo"
         assert e.message2 == "bar"
-      _ -> flunk("Should raise MyErrorWithMessages error")
+
+      _ ->
+        flunk("Should raise MyErrorWithMessages error")
     end
   end
 
   test "should raise error if passing nonsense keywords" do
     mock(MockBar)
+
     try do
       intercept(MockBar, :with_args, ["a", 100, any()], message: "foo", message2: "bar")
       flunk("should raise error")

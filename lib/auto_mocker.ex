@@ -68,7 +68,7 @@ defmodule AutoMocker do
   end
 
   defp exported_functions(module) do
-    module.module_info
+    module.module_info()
     |> Keyword.get(:exports)
     |> Keyword.delete(:__info__)
     |> Keyword.delete(:module_info)
