@@ -343,6 +343,20 @@ mock(MockBar)
 intercept(MockBar, :with_args, [any(), any()], raises: SomeError, message: "My special message", more_detail: "rtfm")
 ```
 
+## New in version 1.5
+
+You can now mock erlang modules. When injected, you must set the new alias:
+
+```elixir
+defmodule SampleModule do
+  use Injector
+  inject(:gen_tcp, as: GenTcp) # now it can be mocked
+
+  def listen()
+    GenTcp.listen(5000, [:binary])
+  end
+end
+
 ## Gotcha's/Limitations
 
 Due to the way that syringe handles the inject as an alias, if you refer
