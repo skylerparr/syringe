@@ -356,6 +356,7 @@ defmodule SampleModule do
     GenTcp.listen(5000, [:binary])
   end
 end
+```
 
 ## Gotcha's/Limitations
 
