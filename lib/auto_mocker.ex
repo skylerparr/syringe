@@ -9,7 +9,16 @@ defmodule AutoMocker do
 
   defp gen_mock(module) do
     mod_string = module |> Atom.to_string()
-    module = "Elixir.#{mod_string}" |> String.to_atom()
+
+    module =
+      case Injector.elixir_module?(mod_string) do
+        true ->
+          "Elixir.#{mod_string}" |> String.to_atom()
+
+        _ ->
+          mod_string |> String.to_atom()
+      end
+
     functions = exported_functions(module)
     quoted = gen_interface(module, functions)
 

@@ -146,9 +146,18 @@ defmodule Mocker do
     module =
       module
       |> Atom.to_string()
-      |> String.split(".")
-      |> tl
-      |> Enum.join(".")
+
+    module =
+      case Injector.elixir_module?(module) do
+        true ->
+          module
+          |> String.split(".")
+          |> tl
+          |> Enum.join(".")
+
+        _ ->
+          module
+      end
 
     ("Injector." <> module)
     |> String.to_atom()

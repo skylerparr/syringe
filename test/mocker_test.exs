@@ -53,6 +53,7 @@ end
 defmodule MockTasks do
   use Injector
   inject(Task)
+  inject(:timer, as: Timer)
 
   def run_tasks() do
     task2 =
@@ -62,6 +63,10 @@ defmodule MockTasks do
       end)
 
     task2
+  end
+
+  def sleep() do
+    Timer.sleep(1_000)
   end
 
   def run(arg) do
@@ -668,5 +673,20 @@ defmodule MockerTest do
       _ in KeyError ->
         assert true
     end
+  end
+
+  test "should mock non elixir modules with an alias" do
+    mock(:timer)
+
+    expect =
+      intercept(:timer, :sleep, [any()],
+        with: fn _ ->
+          :ok
+        end
+      )
+
+    MockTasks.sleep()
+
+    assert expect |> was_called() == once()
   end
 end

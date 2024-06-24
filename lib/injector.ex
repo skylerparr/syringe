@@ -20,10 +20,14 @@ defmodule Injector do
   end
 
   def get_module(definition) do
-    {:__aliases__, _, module} = definition
+    case definition do
+      {:__aliases__, _, module} ->
+        Enum.join(module, ".")
+        |> String.to_atom()
 
-    Enum.join(module, ".")
-    |> String.to_atom()
+      atom ->
+        atom
+    end
   end
 
   def as_elixir_module(module) do
@@ -33,5 +37,15 @@ defmodule Injector do
 
     (@elixir_namespace <> as_string)
     |> String.to_atom()
+  end
+
+  def elixir_module?(module) do
+    case String.first(module) do
+      <<char>> when char in ?A..?Z ->
+        true
+
+      _ ->
+        false
+    end
   end
 end
