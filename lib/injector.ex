@@ -35,8 +35,14 @@ defmodule Injector do
       module
       |> Atom.to_string()
 
-    (@elixir_namespace <> as_string)
-    |> String.to_atom()
+    case elixir_module?(as_string) do
+      true ->
+        (@elixir_namespace <> as_string)
+        |> String.to_atom()
+
+      false ->
+        module
+    end
   end
 
   def elixir_module?(module) do

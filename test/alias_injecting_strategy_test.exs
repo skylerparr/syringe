@@ -21,6 +21,7 @@ defmodule AliasSample do
   inject(AliasBar)
   inject(One.Two.Three.Four.Five)
   inject(MyService.Alias.Cool.Face.McBabar, as: BBar)
+  inject(:inet, as: Inet)
 
   def call_bar do
     AliasBar.bar()
@@ -32,6 +33,10 @@ defmodule AliasSample do
 
   def four do
     Five.four()
+  end
+
+  def gethostname() do
+    Inet.gethostname()
   end
 end
 
@@ -59,5 +64,9 @@ defmodule AliasInjectingStrategyTest do
 
   test "inject correct alias" do
     assert AliasSample.four() == "4"
+  end
+
+  test "inject erlang module" do
+    assert AliasSample.gethostname()
   end
 end
